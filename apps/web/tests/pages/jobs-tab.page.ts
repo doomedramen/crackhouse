@@ -9,6 +9,8 @@ export class JobsTabPage {
 
   // Tab element
   readonly tab: Locator;
+
+  // Tab content
   readonly content: Locator;
 
   // Action buttons
@@ -26,7 +28,6 @@ export class JobsTabPage {
     // Tab navigation - use button role with name pattern since tabs are buttons
     this.tab = page.getByRole('button', { name: /^jobs/i });
     this.content = page.locator('main'); // Jobs content is in main
-
     // Action buttons - "create job" button in main content area (not header)
     this.createJobButton = page.locator('main').getByRole('button', { name: /create job/i });
 
@@ -39,8 +40,11 @@ export class JobsTabPage {
 
   async navigateToTab() {
     await this.tab.click();
+    // Wait for the jobs tab to become active (has border-primary class)
+    // This is more reliable than waitForLoadState('networkidle') which may never fire
+    await expect(this.tab).toHaveAttribute('class', /border-primary/i);
+    // Then wait for content to load
     await this.page.waitForLoadState('networkidle');
-    // Wait for the jobs view to load - either table or empty state
     const jobsContent = this.jobsTable.or(this.emptyState);
     await expect(jobsContent).toBeVisible({ timeout: 15000 });
   }
@@ -65,7 +69,6 @@ export class JobsTabPage {
   async getJobByName(name: string): Promise<Locator | null> {
     const rows = this.tableRows;
     const count = await rows.count();
-
     for (let i = 0; i < count; i++) {
       const row = rows.nth(i);
       const text = await row.textContent();
