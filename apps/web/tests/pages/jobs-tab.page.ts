@@ -43,8 +43,8 @@ export class JobsTabPage {
     // Wait for the jobs tab to become active (has border-primary class)
     // This is more reliable than waitForLoadState('networkidle') which may never fire
     await expect(this.tab).toHaveAttribute('class', /border-primary/i);
-    // Then wait for content to load
-    await this.page.waitForLoadState('networkidle');
+    // Content is now visible, no need to wait for networkidle again
+    // The jobsTable.or(emptyState) will match either the table or empty state
     const jobsContent = this.jobsTable.or(this.emptyState);
     await expect(jobsContent).toBeVisible({ timeout: 15000 });
   }
