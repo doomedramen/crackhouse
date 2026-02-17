@@ -44,14 +44,9 @@ export class JobsTabPage {
     // This is more reliable than waitForLoadState('networkidle') which may never fire
     await expect(this.tab).toHaveAttribute('class', /border-primary/i);
     // Wait for either table or empty state to be visible
-    // Use a more specific locator that won't match multiple elements
-    const jobsTableVisible = this.content.locator('table').isVisible();
-    const emptyStateVisible = this.emptyState.isVisible();
-
-    // Wait for at least one of them to be visible
     await expect(async () => {
-      const hasTable = await jobsTableVisible;
-      const hasEmpty = await emptyStateVisible;
+      const hasTable = await this.content.locator('table').isVisible().catch(() => false);
+      const hasEmpty = await this.emptyState.isVisible().catch(() => false);
       if (!hasTable && !hasEmpty) {
         throw new Error('Neither table nor empty state is visible');
       }
@@ -64,7 +59,15 @@ export class JobsTabPage {
   }
 
   async waitForLoaded() {
-    await expect(this.loadingIndicator).not.toBeVisible({ timeout: 15000 });
+    // Wait for either table or empty state to be visible
+    // This is more reliable than waiting for loading indicator to disappear
+    await expect(async () => {
+      const hasTable = await this.content.locator('table').isVisible().catch(() => false);
+      const hasEmpty = await this.emptyState.isVisible().catch(() => false);
+      if (!hasTable && !hasEmpty) {
+        throw new Error('Jobs tab not loaded: neither table nor empty state visible');
+      }
+    }).toPass({ timeout: 15000 });
   }
 
   async getJobCount(): Promise<number> {
