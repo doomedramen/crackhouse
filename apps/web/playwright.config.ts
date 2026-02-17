@@ -103,14 +103,15 @@ export default defineConfig({
   /* Run API + Worker and frontend servers before starting tests */
   webServer: [
     {
-      // API Server + Worker (Hono + BullMQ) - PORT=3001 explicitly set since dotenv-flow may not load without base .env
-      // Seed config before starting the server (globalSetup runs AFTER webServer starts)
-      // Worker runs in background (&), API in foreground so Playwright can check health endpoint
-      command: "tsx ../web/tests/seed-config.ts && NODE_ENV=test pnpm run worker & NODE_ENV=test PORT=3001 pnpm run dev",
+      // API Server + Worker (Hono + BullMQ)
+      // Testcontainers are started by launch-e2e.ts before Playwright runs.
+      // DATABASE_URL/REDIS_* are already in the environment.
+      // Worker runs in background (&), API in foreground so Playwright can check health endpoint.
+      command: "NODE_ENV=test PORT=3001 pnpm run worker & NODE_ENV=test PORT=3001 pnpm run dev",
       cwd: path.resolve(__dirname, "../../apps/api"),
       url: "http://localhost:3001/health",
       reuseExistingServer: !process.env.CI,
-      timeout: 60 * 1000, // 1 minute - API starts faster
+      timeout: 60 * 1000,
       stdout: "pipe",
       stderr: "pipe",
     },
@@ -120,7 +121,7 @@ export default defineConfig({
       cwd: __dirname,
       url: "http://localhost:3000",
       reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000, // 2 minutes - Next.js needs more time
+      timeout: 120 * 1000,
       stdout: "pipe",
       stderr: "pipe",
     },
