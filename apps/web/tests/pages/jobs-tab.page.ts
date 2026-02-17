@@ -43,10 +43,19 @@ export class JobsTabPage {
     // Wait for the jobs tab to become active (has border-primary class)
     // This is more reliable than waitForLoadState('networkidle') which may never fire
     await expect(this.tab).toHaveAttribute('class', /border-primary/i);
-    // Content is now visible, no need to wait for networkidle again
-    // The jobsTable.or(emptyState) will match either the table or empty state
-    const jobsContent = this.jobsTable.or(this.emptyState);
-    await expect(jobsContent).toBeVisible({ timeout: 15000 });
+    // Wait for either table or empty state to be visible
+    // Use a more specific locator that won't match multiple elements
+    const jobsTableVisible = this.content.locator('table').isVisible();
+    const emptyStateVisible = this.emptyState.isVisible();
+
+    // Wait for at least one of them to be visible
+    await expect(async () => {
+      const hasTable = await jobsTableVisible;
+      const hasEmpty = await emptyStateVisible;
+      if (!hasTable && !hasEmpty) {
+        throw new Error('Neither table nor empty state is visible');
+      }
+    }).toPass({ timeout: 15000 });
   }
 
   async isActive(): Promise<boolean> {
