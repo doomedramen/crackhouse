@@ -383,7 +383,7 @@ export function useUsers() {
   return useQuery({
     queryKey: ["users"],
     queryFn: () => ApiClient.get("/api/users"),
-    staleTime: 60 * 1000,
+    staleTime: process.env.NODE_ENV === 'test' ? undefined : 60 * 1000,
     select: (data: any) => ({
       data: data.data || [],
       count: data.count || 0,
