@@ -39,13 +39,16 @@ export class JobsTabPage {
   }
 
   async navigateToTab() {
-    await this.tab.click();
-    // Wait for the jobs tab to become active (has border-primary class)
-    // This is more reliable than waitForLoadState('networkidle') which may never fire
-    await expect(this.tab).toHaveAttribute('class', /border-primary/i);
+    // Ensure we're on a page with a jobs tab
+    await this.page.waitForLoadState('domcontentloaded');
 
-    // Wait a short time for content to render
-    await this.page.waitForTimeout(500);
+    await this.tab.click();
+
+    // Wait for the jobs tab to become active (has border-primary class)
+    await expect(this.tab).toHaveAttribute('class', /border-primary/i, { timeout: 5000 });
+
+    // Wait for network to settle
+    await this.page.waitForLoadState('networkidle', { timeout: 10000 });
 
     // Verify that we're on the jobs tab by checking jobs tab content
     const jobsTabContent = this.page.locator('[data-testid="jobs-tab-content"]');

@@ -12,16 +12,25 @@ test.describe('Jobs Tab', () => {
   let dashboard: DashboardPage;
   let jobsTab: JobsTabPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
     // Reset page state by clearing storage and cookies
-    await page.context().clearCookies();
+    await context.clearCookies();
+    await context.clearPermissions();
     // Wait a bit for state to clear
     await page.waitForTimeout(100);
+
+    // Navigate to root first to clear any React state
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(500);
 
     // Login and navigate to dashboard
     await loginViaUI(page, TEST_USER.email, TEST_USER.password);
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');
+
+    // Extra wait to ensure React has fully initialized
+    await page.waitForTimeout(500);
 
     dashboard = new DashboardPage(page);
     jobsTab = new JobsTabPage(page);
