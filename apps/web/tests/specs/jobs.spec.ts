@@ -13,9 +13,14 @@ test.describe('Jobs Tab', () => {
   let jobsTab: JobsTabPage;
 
   test.beforeEach(async ({ page }) => {
+    // Reset page state by clearing storage and cookies
+    await page.context().clearCookies();
+    // Wait a bit for state to clear
+    await page.waitForTimeout(100);
+
     // Login and navigate to dashboard
     await loginViaUI(page, TEST_USER.email, TEST_USER.password);
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');
 
     dashboard = new DashboardPage(page);
@@ -29,7 +34,8 @@ test.describe('Jobs Tab', () => {
 
     test('should navigate to jobs tab when clicked', async ({ page }) => {
       await jobsTab.navigateToTab();
-      await expect(jobsTab.content).toBeVisible();
+      // Verify jobs tab content is visible (jobs-tab component is rendered)
+      await expect(page.locator('[data-testid="jobs-tab-content"]')).toBeVisible();
     });
 
     test('should show tab count badge', async ({ page }) => {

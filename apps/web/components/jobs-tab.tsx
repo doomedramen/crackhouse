@@ -83,7 +83,7 @@ export function JobsTab({ className }: JobsTabProps) {
   }
 
   return (
-    <div className={`space-y-6 ${className}`} data-testid="jobs-tab">
+    <div className={`space-y-6 ${className}`} data-testid="jobs-tab-content">
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between font-mono">
         <div></div>
