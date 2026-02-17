@@ -379,11 +379,13 @@ export function useStartCleanup() {
 }
 
 // User management hooks
-export function useUsers() {
+export function useUsers(enabled: boolean = true) {
   return useQuery({
     queryKey: ["users"],
     queryFn: () => ApiClient.get("/api/users"),
+    enabled,
     staleTime: process.env.NODE_ENV === 'test' ? undefined : 60 * 1000,
+    retry: process.env.NODE_ENV === 'test' ? false : 3,
     select: (data: any) => ({
       data: data.data || [],
       count: data.count || 0,

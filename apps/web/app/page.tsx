@@ -33,11 +33,15 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState<TabType>('networks');
   const { data: authData, isLoading, error } = useAuthSession();
 
+  // Check if user is admin or superuser
+  const isAdmin = (authData?.user as any)?.role === 'admin' || (authData?.user as any)?.role === 'superuser';
+
   // Fetch data for tab counts
   const { data: networksData } = useNetworks();
   const { data: dictionariesData } = useDictionaries();
   const { data: jobsData } = useJobs();
-  const { data: usersData } = useUsers();
+  // Only fetch users if admin to avoid 403 errors
+  const { data: usersData } = useUsers(isAdmin);
   const { data: resultsData } = useResults();
 
   // Get counts for tabs
@@ -65,9 +69,6 @@ export default function Page() {
       </div>
     );
   }
-
-  // Check if user is admin or superuser
-  const isAdmin = (authData?.user as any)?.role === 'admin' || (authData?.user as any)?.role === 'superuser';
 
   const renderActiveTab = () => {
     switch (activeTab) {

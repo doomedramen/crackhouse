@@ -150,7 +150,8 @@ export async function loginAndSaveState(
 export async function logout(page: Page) {
   // First, navigate to dashboard to ensure we're on a page with the navigation
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
+  // Wait for the dashboard to be loaded - don't use networkidle as it's flaky when already idle
+  await expect(page.locator('[data-testid="dashboard"]')).toBeVisible({ timeout: 10000 });
 
   // Click on user avatar to open dropdown
   const avatar = page.locator('[data-testid="user-menu"]');
@@ -173,7 +174,7 @@ export async function logout(page: Page) {
     // Fallback: clear cookies to log out
     await page.context().clearCookies();
     await page.goto('/sign-in');
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByLabel(/email/i)).toBeVisible({ timeout: 5000 });
   }
 }
 
@@ -183,7 +184,8 @@ export async function logout(page: Page) {
 export async function isAuthenticated(page: Page): Promise<boolean> {
   // Navigate to a protected page
   await page.goto('/settings');
-  await page.waitForLoadState('networkidle');
+  // Wait for navigation to complete - don't use networkidle as it's flaky
+  await page.waitForTimeout(500);
 
   // If we stay on settings, we're authenticated
   return !page.url().includes('/sign-in');

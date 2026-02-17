@@ -1,6 +1,6 @@
 'use client';
 
-import { useNetworks, useDictionaries, useJobs, useUsers, useStorageStats, useResultsStats } from '@/lib/api-hooks';
+import { useNetworks, useDictionaries, useJobs, useStorageStats, useResultsStats } from '@/lib/api-hooks';
 import { Radar, BookOpen, Package, Users, HardDrive, Shield } from 'lucide-react';
 
 interface StatCardProps {
@@ -53,7 +53,6 @@ export function StatsCards() {
   const { data: networksData, isLoading: networksLoading } = useNetworks();
   const { data: dictionariesData, isLoading: dictionariesLoading } = useDictionaries();
   const { data: jobsData, isLoading: jobsLoading } = useJobs();
-  const { data: usersData, isLoading: usersLoading } = useUsers();
   const { data: storageData, isLoading: storageLoading } = useStorageStats();
   const { data: resultsStats, isLoading: resultsLoading } = useResultsStats();
 
@@ -98,7 +97,7 @@ export function StatsCards() {
     return `${bytes}B`;
   };
 
-  const isLoading = networksLoading || dictionariesLoading || jobsLoading || usersLoading || storageLoading || resultsLoading;
+  const isLoading = networksLoading || dictionariesLoading || jobsLoading || storageLoading || resultsLoading;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4" data-testid="stats-cards">
