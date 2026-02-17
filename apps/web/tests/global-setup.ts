@@ -1,13 +1,29 @@
+import { startTestContainers, setTestEnvVars, type TestContainers } from '@workspace/testcontainers';
 import { cleanDatabase, seedConfig } from './helpers/database';
+
+// Store containers on globalThis so global-teardown can stop them
+declare global {
+  var __TEST_CONTAINERS__: TestContainers | undefined;
+}
 
 /**
  * Global setup for Playwright tests
  * Runs once before all tests, BEFORE servers start
  *
- * Note: Test users are created in auth.setup.global.ts which runs after servers start
+ * Order: globalSetup → webServer → tests → globalTeardown
+ * Environment variables set here are inherited by webServer child processes.
  */
 export default async function globalSetup() {
-  console.log('🔧 Setting up test environment (pre-server)...');
+  console.log('Starting test containers...');
+
+  // Start Postgres + Redis via Testcontainers
+  const { containers, ports } = await startTestContainers();
+  setTestEnvVars(ports);
+
+  // Store for teardown
+  globalThis.__TEST_CONTAINERS__ = containers;
+
+  console.log('Setting up test environment (pre-server)...');
 
   try {
     // Seed config values first (API needs these to start)
@@ -16,12 +32,9 @@ export default async function globalSetup() {
     // Clean the test database (preserves config)
     await cleanDatabase();
 
-    // Note: Test user creation moved to auth.setup.global.ts
-    // because it needs the API to be running
-
-    console.log('✅ Pre-server setup complete');
+    console.log('Pre-server setup complete');
   } catch (error) {
-    console.error('❌ Failed to set up test environment:', error);
+    console.error('Failed to set up test environment:', error);
     throw error;
   }
 }

@@ -21,10 +21,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui",
-    "test:services:start": "docker compose -f ../../testing/docker/docker-compose.unit-test.yml up -d",
-    "test:services:stop": "docker compose -f ../../testing/docker/docker-compose.unit-test.yml down",
-    "test:services:logs": "docker compose -f ../../testing/docker/docker-compose.unit-test.yml logs"
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.8",
@@ -58,6 +55,7 @@
     "@types/multer": "^2.0.0",
     "@types/nodemailer": "^7.0.5",
     "@vitest/coverage-v8": "^4.0.17",
+    "@workspace/testcontainers": "workspace:*",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.17"

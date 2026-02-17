@@ -1,22 +1,32 @@
 # Testing
 
-This directory contains testing infrastructure for CrackHouse.
+This directory contains testing documentation for CrackHouse.
 
-## E2E Tests
+## Test Infrastructure
 
-End-to-end tests verify the complete application workflow using Playwright.
+Tests use [Testcontainers](https://node.testcontainers.org/) to automatically manage Postgres and Redis containers. No manual Docker commands are needed — containers start and stop automatically with dynamic ports.
 
-### Running E2E Tests
-
-From the repository root:
+## Unit Tests (API)
 
 ```bash
-# Run all E2E tests
+cd apps/api
+pnpm test:run
+```
+
+Vitest `globalSetup` starts Postgres + Redis via Testcontainers, runs migrations, executes tests, then stops containers.
+
+## E2E Tests (Playwright)
+
+```bash
+# From root
 pnpm test:e2e
 
-# Or directly with Docker Compose
-docker compose -f testing/docker/docker-compose.e2e.yml up --abort-on-container-exit --build
+# Or from apps/web
+cd apps/web
+pnpm test:e2e
 ```
+
+Playwright `globalSetup` starts Testcontainers, seeds the database, then Playwright's `webServer` config starts the API and web servers. Environment variables (DATABASE_URL, REDIS_URL, etc.) are set dynamically and inherited by child processes.
 
 ### What the Tests Cover
 
@@ -26,34 +36,13 @@ docker compose -f testing/docker/docker-compose.e2e.yml up --abort-on-container-
 - Job creation and execution
 - Password cracking verification
 
-### Test Environment
-
-The E2E test suite spins up:
-- PostgreSQL database (port 5433)
-- Redis (port 6380)
-- API server (port 3001)
-- Web server (port 3000)
-- Background worker for job processing
-
-All services run in host network mode for simplicity.
-
 ### Test Files
 
-Tests are located in `apps/web/tests/specs/`:
-- `integration.spec.ts` - Complete end-to-end workflow
-- `auth.spec.ts` - Authentication flows
-- `upload.spec.ts` - File upload functionality
-- `jobs.spec.ts` - Job management
-- `dictionaries.spec.ts` - Dictionary management
-- `networks.spec.ts` - Network management
+Tests are located in `apps/web/tests/specs/`.
 
-### Building the Test Image
+## Shared Package
 
-```bash
-pnpm test:e2e:build
-```
-
-## Docker Files
-
-- `docker/Dockerfile.e2e` - Docker image for running E2E tests
-- `docker/docker-compose.e2e.yml` - Docker Compose configuration for test environment
+The `@workspace/testcontainers` package (`packages/testcontainers/`) provides:
+- `startTestContainers()` — starts Postgres 16 + Redis 7 in parallel
+- `stopTestContainers()` — stops both containers
+- `setTestEnvVars()` — sets DATABASE_URL, REDIS_URL, REDIS_HOST, REDIS_PORT on process.env

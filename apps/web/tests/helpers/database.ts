@@ -5,13 +5,21 @@ import postgres from 'postgres';
  * Connects directly to the test database to clean up and seed data
  */
 
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/autopwn_test';
+function getDatabaseUrl(): string {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error(
+      'DATABASE_URL is not set. Testcontainers global setup should set it automatically.',
+    );
+  }
+  return url;
+}
 
 /**
  * Create a database connection for E2E tests
  */
 export function getTestDb() {
-  return postgres(DATABASE_URL, { max: 1 });
+  return postgres(getDatabaseUrl(), { max: 1 });
 }
 
 /**

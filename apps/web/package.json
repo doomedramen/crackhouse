@@ -47,6 +47,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^11.0.0",
     "@workspace/eslint-config": "workspace:^",
+    "@workspace/testcontainers": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.1",

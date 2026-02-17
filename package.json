@@ -8,8 +8,7 @@
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "knip": "knip",
-    "test:e2e": "docker compose -f testing/docker/docker-compose.e2e.yml up --abort-on-container-exit --build",
-    "test:e2e:build": "docker build -f testing/docker/Dockerfile.e2e -t crackhouse-e2e .",
+    "test:e2e": "pnpm --filter web test:e2e",
     "prepare": "lefthook install"
   },
   "devDependencies": {
