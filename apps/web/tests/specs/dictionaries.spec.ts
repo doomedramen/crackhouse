@@ -147,4 +147,48 @@ test.describe('Dictionaries Tab', () => {
       await expect(modal).toBeVisible();
     });
   });
+
+  test.describe('Dictionaries Content via data-testid', () => {
+    test.beforeEach(async ({ page }) => {
+      await dictionariesTab.navigateToTab();
+      await dictionariesTab.waitForLoaded();
+    });
+
+    test('should display dictionaries content container', async ({ page }) => {
+      const content = page.locator('[data-testid="dictionaries-content"]');
+      await expect(content).toBeVisible();
+    });
+
+    test('should display table body rows when dictionaries exist', async ({ page }) => {
+      const dictCount = await dictionariesTab.getDictionaryCount();
+      if (dictCount === 0) {
+        test.skip();
+        return;
+      }
+
+      const content = page.locator('[data-testid="dictionaries-content"]');
+      const rows = content.locator('table tbody tr');
+      expect(await rows.count()).toBeGreaterThan(0);
+    });
+
+    test('should display status labels for dictionaries', async ({ page }) => {
+      const dictCount = await dictionariesTab.getDictionaryCount();
+      if (dictCount === 0) {
+        test.skip();
+        return;
+      }
+
+      // Each dictionary row should have a status displayed
+      const firstRow = dictionariesTab.tableRows.first();
+      const statusText = await firstRow.textContent();
+      // Status should contain one of the expected values
+      const hasStatus = /uploaded|generated|ready|processing|failed/i.test(statusText || '');
+      expect(hasStatus).toBe(true);
+    });
+
+    test('should display dictionaries upload button via data-testid', async ({ page }) => {
+      const uploadButton = page.locator('[data-testid="dictionaries-upload-button"]');
+      await expect(uploadButton).toBeVisible();
+    });
+  });
 });

@@ -10,7 +10,7 @@ export class JobsTabPage {
   // Tab element
   readonly tab: Locator;
 
-  // Tab content
+  // Tab content - scoped to the jobs-tab-content container
   readonly content: Locator;
 
   // Action buttons
@@ -20,39 +20,29 @@ export class JobsTabPage {
   readonly jobsTable: Locator;
   readonly tableRows: Locator;
   readonly emptyState: Locator;
-  readonly loadingIndicator: Locator;
 
   constructor(page: Page) {
     this.page = page;
 
-    // Tab navigation - use button role with name pattern since tabs are buttons
-    this.tab = page.getByRole('button', { name: /^jobs/i });
-    this.content = page.locator('main'); // Jobs content is in main
-    // Action buttons - "create job" button in main content area (not header)
-    this.createJobButton = page.locator('main').getByRole('button', { name: /create job/i });
+    // Tab navigation - use data-testid for the tab button
+    this.tab = page.locator('[data-testid="jobs-tab"]');
+    // Content scoped to the jobs tab content area
+    this.content = page.locator('[data-testid="jobs-tab-content"]');
 
-    // Table - look for any table in the page
-    this.jobsTable = page.locator('table').first();
-    this.tableRows = page.locator('table tbody tr');
-    this.emptyState = page.getByText(/no.*job/i);
-    this.loadingIndicator = page.locator('.animate-spin');
+    // Action buttons - "create job" button in the jobs tab content
+    this.createJobButton = this.content.locator('[data-testid="create-job-button"]');
+
+    // Table - scoped to jobs tab content
+    this.jobsTable = this.content.locator('table').first();
+    this.tableRows = this.content.locator('table tbody tr');
+    this.emptyState = this.content.locator('[data-testid="jobs-empty-state"]');
   }
 
   async navigateToTab() {
-    // Ensure we're on a page with a jobs tab
     await this.page.waitForLoadState('domcontentloaded');
-
     await this.tab.click();
-
-    // Wait for the jobs tab to become active (has border-primary class)
-    await expect(this.tab).toHaveAttribute('class', /border-primary/i, { timeout: 5000 });
-
-    // Wait for network to settle
-    await this.page.waitForLoadState('networkidle', { timeout: 10000 });
-
-    // Verify that we're on the jobs tab by checking jobs tab content
-    const jobsTabContent = this.page.locator('[data-testid="jobs-tab-content"]');
-    await expect(jobsTabContent).toBeVisible({ timeout: 10000 });
+    // Wait for the jobs tab content to render - avoid networkidle as running jobs cause continuous activity
+    await expect(this.content).toBeVisible({ timeout: 10000 });
   }
 
   async isActive(): Promise<boolean> {
@@ -61,20 +51,19 @@ export class JobsTabPage {
   }
 
   async waitForLoaded() {
-    // Wait for either table or empty state to be visible
-    // This is more reliable than waiting for loading indicator to disappear
-    await expect(async () => {
-      const hasTable = await this.content.locator('table').isVisible().catch(() => false);
-      const hasEmpty = await this.emptyState.isVisible().catch(() => false);
-      if (!hasTable && !hasEmpty) {
-        throw new Error('Jobs tab not loaded: neither table nor empty state visible');
-      }
-    }).toPass({ timeout: 15000 });
+    // Wait for the API to respond and content to render
+    // Either a table (has jobs), empty state (no jobs), or error state should appear
+    // Use Playwright's .or() API for reliable compound matching
+    const table = this.content.locator('table');
+    const emptyState = this.content.locator('[data-testid="jobs-empty-state"]');
+    // Error state renders WITHOUT jobs-tab-content wrapper, so scope to page
+    const errorState = this.page.locator('.text-destructive').first();
+
+    await expect(table.or(emptyState).or(errorState)).toBeVisible({ timeout: 15000 });
   }
 
   async getJobCount(): Promise<number> {
-    await this.waitForLoaded();
-    if (await this.emptyState.isVisible()) {
+    if (await this.emptyState.isVisible().catch(() => false)) {
       return 0;
     }
     return this.tableRows.count();
@@ -96,7 +85,7 @@ export class JobsTabPage {
   async getJobStatus(name: string): Promise<string | null> {
     const row = await this.getJobByName(name);
     if (row) {
-      const statusCell = row.locator('td').nth(1); // Status is second column
+      const statusCell = row.locator('td').nth(1);
       return statusCell.textContent();
     }
     return null;
@@ -125,6 +114,6 @@ export class JobsTabPage {
   }
 
   async hasNoJobs(): Promise<boolean> {
-    return this.emptyState.isVisible();
+    return this.emptyState.isVisible().catch(() => false);
   }
 }

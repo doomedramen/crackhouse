@@ -159,6 +159,63 @@ test.describe('Networks Tab', () => {
     });
   });
 
+  test.describe('Networks Content via data-testid', () => {
+    test.beforeEach(async ({ page }) => {
+      await networksTab.navigateToTab();
+      await networksTab.waitForLoaded();
+    });
+
+    test('should display networks content container', async ({ page }) => {
+      const content = page.locator('[data-testid="networks-content"]');
+      await expect(content).toBeVisible();
+    });
+
+    test('should display table within networks content', async ({ page }) => {
+      const content = page.locator('[data-testid="networks-content"]');
+      const table = content.locator('table');
+      const emptyState = page.getByText(/no networks found/i);
+
+      const hasTable = await table.isVisible().catch(() => false);
+      const hasEmpty = await emptyState.isVisible().catch(() => false);
+      expect(hasTable || hasEmpty).toBe(true);
+    });
+
+    test('should display table body rows when networks exist', async ({ page }) => {
+      const networkCount = await networksTab.getNetworkCount();
+      if (networkCount === 0) {
+        test.skip();
+        return;
+      }
+
+      const content = page.locator('[data-testid="networks-content"]');
+      const rows = content.locator('table tbody tr');
+      expect(await rows.count()).toBeGreaterThan(0);
+    });
+
+    test('should display search input with placeholder', async ({ page }) => {
+      const searchInput = page.locator('input[placeholder*="scan networks"]');
+      await expect(searchInput).toBeVisible();
+    });
+
+    test('should interact with search input', async ({ page }) => {
+      const searchInput = page.locator('input[placeholder*="scan networks"]');
+      await searchInput.fill('TestNetwork');
+      const value = await searchInput.inputValue();
+      expect(value).toBe('TestNetwork');
+      // Clear for other tests
+      await searchInput.clear();
+    });
+
+    test('should display empty state text when no networks match', async ({ page }) => {
+      // Search for something that definitely won't match
+      await networksTab.searchNetworks('zzz_nonexistent_network_zzz');
+      const emptyState = page.getByText(/no networks found/i);
+      await expect(emptyState).toBeVisible({ timeout: 5000 });
+      // Clear search
+      await networksTab.searchInput.clear();
+    });
+  });
+
   test.describe('Upload PCAP Modal', () => {
     test.beforeEach(async ({ page }) => {
       await networksTab.navigateToTab();

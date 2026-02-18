@@ -214,6 +214,98 @@ test.describe('Complete User Workflows', () => {
         await expect(adminContent).toBeVisible();
       }
     });
+
+    test('admin panel should display Config sub-tab by default', async ({ page }) => {
+      await loginViaUI(page, TEST_ADMIN.email, TEST_ADMIN.password);
+      await page.goto('/');
+      await page.waitForLoadState('networkidle');
+
+      const adminTab = page.locator('[data-testid="admin-tab"]');
+      await adminTab.click();
+      await page.waitForLoadState('networkidle');
+
+      const adminContent = page.locator('[data-testid="admin-content"]');
+      await expect(adminContent).toBeVisible();
+
+      // Config button should be visible and active
+      const configButton = adminContent.getByRole('button', { name: /config/i });
+      await expect(configButton).toBeVisible();
+    });
+
+    test('admin panel should display Health sub-tab', async ({ page }) => {
+      await loginViaUI(page, TEST_ADMIN.email, TEST_ADMIN.password);
+      await page.goto('/');
+      await page.waitForLoadState('networkidle');
+
+      const adminTab = page.locator('[data-testid="admin-tab"]');
+      await adminTab.click();
+      await page.waitForLoadState('networkidle');
+
+      const adminContent = page.locator('[data-testid="admin-content"]');
+      await expect(adminContent).toBeVisible();
+
+      const healthButton = adminContent.getByRole('button', { name: /health/i });
+      await expect(healthButton).toBeVisible();
+      await healthButton.click();
+      await page.waitForLoadState('networkidle');
+    });
+
+    test('admin panel should display Audit Logs sub-tab', async ({ page }) => {
+      await loginViaUI(page, TEST_ADMIN.email, TEST_ADMIN.password);
+      await page.goto('/');
+      await page.waitForLoadState('networkidle');
+
+      const adminTab = page.locator('[data-testid="admin-tab"]');
+      await adminTab.click();
+      await page.waitForLoadState('networkidle');
+
+      const adminContent = page.locator('[data-testid="admin-content"]');
+      await expect(adminContent).toBeVisible();
+
+      const auditButton = adminContent.getByRole('button', { name: /audit logs/i });
+      await expect(auditButton).toBeVisible();
+      await auditButton.click();
+      await page.waitForLoadState('networkidle');
+    });
+
+    test('admin panel should display Quick Actions sub-tab', async ({ page }) => {
+      await loginViaUI(page, TEST_ADMIN.email, TEST_ADMIN.password);
+      await page.goto('/');
+      await page.waitForLoadState('networkidle');
+
+      const adminTab = page.locator('[data-testid="admin-tab"]');
+      await adminTab.click();
+      await page.waitForLoadState('networkidle');
+
+      const adminContent = page.locator('[data-testid="admin-content"]');
+      await expect(adminContent).toBeVisible();
+
+      const actionsButton = adminContent.getByRole('button', { name: /quick actions/i });
+      await expect(actionsButton).toBeVisible();
+      await actionsButton.click();
+      await page.waitForLoadState('networkidle');
+    });
+
+    test('admin panel should navigate through all sub-tabs', async ({ page }) => {
+      await loginViaUI(page, TEST_ADMIN.email, TEST_ADMIN.password);
+      await page.goto('/');
+      await page.waitForLoadState('networkidle');
+
+      const adminTab = page.locator('[data-testid="admin-tab"]');
+      await adminTab.click();
+      await page.waitForLoadState('networkidle');
+
+      const adminContent = page.locator('[data-testid="admin-content"]');
+      await expect(adminContent).toBeVisible();
+
+      const subTabs = ['Config', 'Health', 'Audit Logs', 'Quick Actions'];
+      for (const subTabName of subTabs) {
+        const subTab = adminContent.getByRole('button', { name: new RegExp(subTabName, 'i') });
+        await expect(subTab).toBeVisible();
+        await subTab.click();
+        await page.waitForLoadState('networkidle');
+      }
+    });
   });
 
   test.describe('Regular User Workflow', () => {

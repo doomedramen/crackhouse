@@ -1,130 +1,210 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USER, TEST_ADMIN, loginViaUI, logout } from '../helpers/auth';
+import { TEST_USER, TEST_ADMIN, loginViaUI, logout, ensureTestUserExists } from '../helpers/auth';
 
 /**
  * Authentication E2E Tests
  * Tests sign-in, sign-out, and protected route access
  */
 test.describe('Authentication', () => {
-  test.describe('Sign In', () => {
-    test('should display sign-in page', async ({ page }) => {
+  test.describe('Sign In Page', () => {
+    test.beforeEach(async ({ page }) => {
       await page.goto('/sign-in');
       await page.waitForLoadState('networkidle');
-
-      // Verify we're on the sign-in page
-      expect(page.url()).toContain('/sign-in');
-
-      // Look for email and password inputs
-      await expect(page.getByLabel(/email/i)).toBeVisible();
-      await expect(page.getByLabel(/password/i)).toBeVisible();
     });
 
-    test('should sign in with valid credentials', async ({ page }) => {
-      await loginViaUI(page, TEST_USER.email, TEST_USER.password);
+    test('should display branding title', async ({ page }) => {
+      const brandingTitle = page.locator('[data-testid="branding-title"]');
+      await expect(brandingTitle).toBeVisible();
+      await expect(brandingTitle).toHaveText('CrackHouse');
+    });
 
-      // Should redirect away from sign-in page
+    test('should display sign-in form container', async ({ page }) => {
+      const formContainer = page.locator('[data-testid="signin-form-container"]');
+      await expect(formContainer).toBeVisible();
+    });
+
+    test('should display email input with data-testid', async ({ page }) => {
+      const emailInput = page.locator('[data-testid="signin-email-input"]');
+      await expect(emailInput).toBeVisible();
+      await expect(emailInput).toHaveAttribute('type', 'email');
+    });
+
+    test('should display password input with data-testid', async ({ page }) => {
+      const passwordInput = page.locator('[data-testid="signin-password-input"]');
+      await expect(passwordInput).toBeVisible();
+      await expect(passwordInput).toHaveAttribute('type', 'password');
+    });
+
+    test('should display submit button with data-testid', async ({ page }) => {
+      const submitButton = page.locator('[data-testid="signin-submit-button"]');
+      await expect(submitButton).toBeVisible();
+      await expect(submitButton).toBeEnabled();
+    });
+
+    test('should display forgot password link', async ({ page }) => {
+      const forgotLink = page.locator('[data-testid="forgot-password-link"]');
+      await expect(forgotLink).toBeVisible();
+      await expect(forgotLink).toHaveAttribute('href', '/forgot-password');
+    });
+
+    test('should display sign-up link', async ({ page }) => {
+      const signupLink = page.locator('[data-testid="signup-link"]');
+      await expect(signupLink).toBeVisible();
+      await expect(signupLink).toHaveAttribute('href', '/sign-up');
+    });
+
+    test('should sign in with valid credentials using data-testid locators', async ({ page }) => {
+      // Ensure user exists before attempting login
+      await ensureTestUserExists(TEST_USER);
+
+      const emailInput = page.locator('[data-testid="signin-email-input"]');
+      const passwordInput = page.locator('[data-testid="signin-password-input"]');
+      const submitButton = page.locator('[data-testid="signin-submit-button"]');
+
+      await emailInput.fill(TEST_USER.email);
+      await passwordInput.fill(TEST_USER.password);
+
+      await Promise.all([
+        page.waitForURL((url) => !url.pathname.includes('/sign-in'), { timeout: 15000 }),
+        submitButton.click(),
+      ]);
+
       await expect(page).not.toHaveURL(/sign-in/);
-
-      // Should show some authenticated content
-      // This might be dashboard or home page depending on app config
     });
 
     test('should show error with invalid credentials', async ({ page }) => {
-      await page.goto('/sign-in');
+      const emailInput = page.locator('[data-testid="signin-email-input"]');
+      const passwordInput = page.locator('[data-testid="signin-password-input"]');
+      const submitButton = page.locator('[data-testid="signin-submit-button"]');
+
+      await emailInput.fill('invalid@example.com');
+      await passwordInput.fill('wrongpassword');
+      await submitButton.click();
       await page.waitForLoadState('networkidle');
 
-      // Fill in invalid credentials
-      await page.getByLabel(/email/i).fill('invalid@example.com');
-      await page.getByLabel(/password/i).fill('wrongpassword');
-
-      // Submit
-      await page.getByRole('button', { name: /sign in/i }).click();
-      await page.waitForLoadState('networkidle');
-
-      // Should stay on sign-in page or show error
-      // Check that we're still on sign-in or there's an error message
+      // Should stay on sign-in page or show error message
       const stillOnSignIn = page.url().includes('/sign-in');
-      const hasError = await page.getByText(/invalid|error|wrong|incorrect/i).isVisible().catch(() => false);
+      const errorMessage = page.locator('[data-testid="signin-error-message"]');
+      const hasError = await errorMessage.isVisible().catch(() => false);
 
       expect(stillOnSignIn || hasError).toBe(true);
     });
+
+    test('should navigate to sign-up page from sign-in', async ({ page }) => {
+      const signupLink = page.locator('[data-testid="signup-link"]');
+      await expect(signupLink).toBeVisible();
+
+      await Promise.all([
+        page.waitForURL(/sign-up/),
+        signupLink.click(),
+      ]);
+
+      expect(page.url()).toContain('/sign-up');
+    });
   });
 
-  test.describe('Sign Up', () => {
-    test('should display sign-up page', async ({ page }) => {
+  test.describe('Sign Up Page', () => {
+    test.beforeEach(async ({ page }) => {
       await page.goto('/sign-up');
       await page.waitForLoadState('networkidle');
+    });
 
-      // Verify we're on the sign-up page
-      expect(page.url()).toContain('/sign-up');
+    test('should display branding title on sign-up', async ({ page }) => {
+      const brandingTitle = page.locator('[data-testid="branding-title"]');
+      await expect(brandingTitle).toBeVisible();
+      await expect(brandingTitle).toHaveText('CrackHouse');
+    });
 
-      // Look for registration form elements
-      await expect(page.getByLabel(/email/i)).toBeVisible();
-      await expect(page.getByLabel(/password/i).first()).toBeVisible();
+    test('should display sign-up form container', async ({ page }) => {
+      const formContainer = page.locator('[data-testid="signup-form-container"]');
+      await expect(formContainer).toBeVisible();
+    });
+
+    test('should display name input', async ({ page }) => {
+      const nameInput = page.locator('[data-testid="signup-name-input"]');
+      await expect(nameInput).toBeVisible();
+      await expect(nameInput).toHaveAttribute('type', 'text');
+    });
+
+    test('should display email input', async ({ page }) => {
+      const emailInput = page.locator('[data-testid="signup-email-input"]');
+      await expect(emailInput).toBeVisible();
+      await expect(emailInput).toHaveAttribute('type', 'email');
+    });
+
+    test('should display password input', async ({ page }) => {
+      const passwordInput = page.locator('[data-testid="signup-password-input"]');
+      await expect(passwordInput).toBeVisible();
+      await expect(passwordInput).toHaveAttribute('type', 'password');
+    });
+
+    test('should display submit button', async ({ page }) => {
+      const submitButton = page.locator('[data-testid="signup-submit-button"]');
+      await expect(submitButton).toBeVisible();
+      await expect(submitButton).toBeEnabled();
+    });
+
+    test('should display sign-in link', async ({ page }) => {
+      const signinLink = page.locator('[data-testid="signin-link"]');
+      await expect(signinLink).toBeVisible();
+      await expect(signinLink).toHaveAttribute('href', '/sign-in');
     });
 
     test('should navigate to sign-in from sign-up', async ({ page }) => {
-      await page.goto('/sign-up');
-      await page.waitForLoadState('networkidle');
+      const signinLink = page.locator('[data-testid="signin-link"]');
+      await expect(signinLink).toBeVisible();
 
-      // Look for the sign-in link using data-testid
-      const signInLink = page.locator('[data-testid="signin-link"]');
-
-      await expect(signInLink).toBeVisible();
-
-      // Use Promise.all to click and wait for navigation simultaneously
       await Promise.all([
         page.waitForURL(/sign-in/),
-        signInLink.click(),
+        signinLink.click(),
       ]);
 
       expect(page.url()).toContain('/sign-in');
+    });
+
+    test('should fill all sign-up form fields', async ({ page }) => {
+      const nameInput = page.locator('[data-testid="signup-name-input"]');
+      const emailInput = page.locator('[data-testid="signup-email-input"]');
+      const passwordInput = page.locator('[data-testid="signup-password-input"]');
+
+      await nameInput.fill('Test User');
+      await emailInput.fill('test@example.com');
+      await passwordInput.fill('password123');
+
+      await expect(nameInput).toHaveValue('Test User');
+      await expect(emailInput).toHaveValue('test@example.com');
+      await expect(passwordInput).toHaveValue('password123');
     });
   });
 
   test.describe('Protected Routes', () => {
     test('should redirect to sign-in when accessing settings unauthenticated', async ({ page }) => {
-      // Clear any existing cookies
       await page.context().clearCookies();
 
       await page.goto('/settings');
       await page.waitForLoadState('networkidle');
 
-      // Should redirect to sign-in
       expect(page.url()).toContain('/sign-in');
     });
 
     test('should access settings when authenticated', async ({ page }) => {
-      // Login first
       await loginViaUI(page, TEST_USER.email, TEST_USER.password);
-
-      // Verify we're logged in (redirected away from sign-in)
       await expect(page).not.toHaveURL(/sign-in/, { timeout: 10000 });
 
-      // Navigate to settings
       await page.goto('/settings');
       await page.waitForLoadState('networkidle');
 
-      // Should stay on settings (not redirect to sign-in)
-      // Note: If auth is working, we should be on settings
-      // If not working, we get redirected to sign-in
       expect(page.url()).toContain('/settings');
     });
   });
 
   test.describe('Sign Out', () => {
     test('should sign out successfully', async ({ page }) => {
-      // Login first
       await loginViaUI(page, TEST_USER.email, TEST_USER.password);
-
-      // Verify we're logged in (not on sign-in page)
       await expect(page).not.toHaveURL(/sign-in/);
 
-      // Sign out
       await logout(page);
 
-      // Should be redirected to sign-in or home page
-      // After logout, accessing protected route should redirect to sign-in
       await page.goto('/settings');
       await page.waitForLoadState('networkidle');
 

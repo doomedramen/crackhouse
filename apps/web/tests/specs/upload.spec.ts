@@ -171,5 +171,72 @@ test.describe('Upload Flow', () => {
       const selectedFiles = page.locator('[data-testid="selected-files-pcap"]');
       await expect(selectedFiles).toBeVisible({ timeout: 5000 });
     });
+
+    test('should display individual file item after PCAP selection', async ({ page }) => {
+      await dashboard.clickUpload();
+      await uploadModal.waitForOpen();
+      await uploadModal.selectPcapTab();
+
+      const testPcapPath = createTestPcap('item-test.pcap');
+      await uploadModal.uploadFile(testPcapPath);
+
+      // File item should be visible with data-testid pattern
+      const selectedFiles = page.locator('[data-testid="selected-files-pcap"]');
+      await expect(selectedFiles).toBeVisible({ timeout: 5000 });
+
+      // Individual file items start with file-item-pcap-
+      const fileItems = page.locator('[data-testid^="file-item-pcap-"]');
+      await expect(fileItems.first()).toBeVisible({ timeout: 5000 });
+    });
+
+    test('should display file size information', async ({ page }) => {
+      await dashboard.clickUpload();
+      await uploadModal.waitForOpen();
+      await uploadModal.selectPcapTab();
+
+      const testPcapPath = createTestPcap('size-test.pcap');
+      await uploadModal.uploadFile(testPcapPath);
+
+      const selectedFiles = page.locator('[data-testid="selected-files-pcap"]');
+      await expect(selectedFiles).toBeVisible({ timeout: 5000 });
+
+      // File size should be displayed (bytes/KB/MB)
+      const fileText = await selectedFiles.textContent();
+      const hasSize = /\d+\s*(bytes|KB|MB|B)/i.test(fileText || '');
+      expect(hasSize).toBe(true);
+    });
+  });
+
+  test.describe('Upload Modal Close', () => {
+    test('should close upload modal via close button data-testid', async ({ page }) => {
+      await dashboard.clickUpload();
+      await uploadModal.waitForOpen();
+
+      const closeButton = page.locator('[data-testid="upload-modal-close"]');
+      await expect(closeButton).toBeVisible();
+      await closeButton.click();
+
+      await expect(uploadModal.modal).not.toBeVisible();
+    });
+  });
+
+  test.describe('File Input Elements', () => {
+    test('should have PCAP file input element', async ({ page }) => {
+      await dashboard.clickUpload();
+      await uploadModal.waitForOpen();
+      await uploadModal.selectPcapTab();
+
+      const fileInput = page.locator('[data-testid="file-input-pcap"]');
+      await expect(fileInput).toBeAttached();
+    });
+
+    test('should have dictionary file input element', async ({ page }) => {
+      await dashboard.clickUpload();
+      await uploadModal.waitForOpen();
+      await uploadModal.selectDictionaryTab();
+
+      const fileInput = page.locator('[data-testid="file-input-dictionary"]');
+      await expect(fileInput).toBeAttached();
+    });
   });
 });
