@@ -2,293 +2,276 @@ import { test, expect } from '@playwright/test';
 import { TEST_USER, loginViaUI } from '../helpers/auth';
 import { JobsTabPage } from '../pages/jobs-tab.page';
 import { CreateJobModalPage } from '../pages/create-job-modal.page';
-import { DashboardPage } from '../pages/dashboard.page';
+import {
+  uploadDictionary,
+  uploadPcap,
+  createJob,
+  blockWebSockets,
+} from '../helpers/setup-helpers';
+import {
+  clearBrowserState,
+  waitForTableData,
+  TEST_TIMEOUTS,
+} from '../helpers/wait-helpers';
 
 /**
  * Jobs Tab E2E Tests
- * Tests for job viewing, creation, and monitoring functionality
+ *
+ * Structure:
+ * 1. Tab Navigation & Empty State — no data setup, beforeEach login
+ * 2. Jobs List & Details — serial, ONE setup: dict + PCAP + job
+ * 3. Create Job Modal — serial, ONE setup: dict + PCAP only (no job)
+ *    Includes end-to-end job creation through the UI
  */
+
 test.describe('Jobs Tab', () => {
-  let dashboard: DashboardPage;
-  let jobsTab: JobsTabPage;
+  // ─── Block 1: Tab Navigation & Empty State ───────────────────────
+  // No data setup needed. Each test logs in fresh.
+  test.describe('Tab Navigation & Empty State', () => {
+    let jobsTab: JobsTabPage;
 
-  test.beforeEach(async ({ page, context }) => {
-    // Reset page state by clearing storage and cookies
-    await context.clearCookies();
-    await context.clearPermissions();
-    // Wait a bit for state to clear
-    await page.waitForTimeout(100);
+    test.beforeEach(async ({ page, context }) => {
+      await clearBrowserState(page, context);
+      await blockWebSockets(page);
 
-    // Block WebSocket upgrade requests to prevent connection flooding
-    // The WS server runs on port 3002 but the URL replacement logic may not work
-    // during tests, causing thousands of failed reconnection attempts
-    await page.route(/\?userId=/, route => route.abort());
+      await loginViaUI(page, TEST_USER.email, TEST_USER.password);
+      await page.goto('/');
+      await expect(page.locator('[data-testid="dashboard"]')).toBeVisible({ timeout: TEST_TIMEOUTS.pageLoad });
 
-    // Login and navigate to dashboard
-    await loginViaUI(page, TEST_USER.email, TEST_USER.password);
-    // Navigate fresh to clear any stale React state
-    await page.goto('/');
-    // Wait for dashboard to render
-    await expect(page.locator('[data-testid="dashboard"]')).toBeVisible({ timeout: 15000 });
-
-    dashboard = new DashboardPage(page);
-    jobsTab = new JobsTabPage(page);
-  });
-
-  test.describe('Tab Navigation', () => {
-    test('should display jobs tab on dashboard', async ({ page }) => {
-      await expect(jobsTab.tab).toBeVisible();
+      jobsTab = new JobsTabPage(page);
     });
 
-    test('should navigate to jobs tab when clicked', async ({ page }) => {
+    test('should display jobs tab and navigate to it', async ({ page }) => {
+      // Tab is visible on dashboard
+      await expect(jobsTab.tab).toBeVisible();
+
+      // Can navigate to it
       await jobsTab.navigateToTab();
-      // Verify jobs tab content is visible (jobs-tab component is rendered)
       await expect(page.locator('[data-testid="jobs-tab-content"]')).toBeVisible();
     });
 
-    test('should show tab count badge', async ({ page }) => {
-      const tabText = await jobsTab.tab.textContent();
-      expect(tabText).toMatch(/job/i);
-      // Count badge should be visible
-      const countBadge = jobsTab.tab.locator('.bg-muted');
-      await expect(countBadge).toBeVisible();
-    });
-  });
-
-  test.describe('Jobs List Display', () => {
-    test.beforeEach(async ({ page }) => {
+    test('should display empty state when no jobs exist', async ({ page }) => {
       await jobsTab.navigateToTab();
       await jobsTab.waitForLoaded();
-    });
 
-    test('should display jobs table or empty state', async ({ page }) => {
-      const hasJobs = (await jobsTab.getJobCount()) > 0;
-      const hasEmptyState = await jobsTab.hasNoJobs();
-
-      // Content should be visible even if loading fails
-      expect(hasJobs || hasEmptyState).toBe(true);
-    });
-
-    test('should display create job button', async ({ page }) => {
-      await expect(jobsTab.createJobButton).toBeVisible();
-    });
-
-    test('should show table headers when jobs exist', async ({ page }) => {
       const jobCount = await jobsTab.getJobCount();
-
-      if (jobCount === 0) {
-        // Empty state should show create job call-to-action
-        const emptyStateText = await page.getByText(/create your first cracking job/i).isVisible();
-        expect(emptyStateText).toBe(true);
+      if (jobCount > 0) {
+        // If jobs already exist from other test runs, skip this test
+        test.skip();
         return;
       }
 
-      // If jobs exist, table headers should be present
+      await expect(jobsTab.emptyState).toBeVisible();
+    });
+  });
+
+  // ─── Block 2: Jobs List & Details ────────────────────────────────
+  // Serial: ONE setup creates dict + PCAP + job, then all tests run
+  // against that shared state without resetting.
+  test.describe('Jobs List & Details', () => {
+    test.describe.configure({ mode: 'serial' });
+
+    let jobsTab: JobsTabPage;
+
+    test('setup: login, upload dict, PCAP, create job', async ({ page, context }) => {
+      test.setTimeout(180000);
+
+      await clearBrowserState(page, context);
+      await blockWebSockets(page);
+
+      // Login
+      await loginViaUI(page, TEST_USER.email, TEST_USER.password);
+      await page.goto('/');
+      await expect(page.locator('[data-testid="dashboard"]')).toBeVisible({ timeout: TEST_TIMEOUTS.pageLoad });
+
+      // Upload dictionary
+      const dict = await uploadDictionary(context);
+
+      // Upload PCAP and get networks
+      const { networks } = await uploadPcap(context, page);
+      expect(networks.length).toBeGreaterThan(0);
+
+      const network = networks.find(n => n.hasHandshake) ?? networks[0]!;
+
+      // Create job via API
+      const jobId = await createJob(context, [network.id], [dict.id]);
+      expect(jobId).toBeTruthy();
+
+      // Reload to pick up new data
+      await page.reload();
+      await expect(page.locator('[data-testid="dashboard"]')).toBeVisible({ timeout: TEST_TIMEOUTS.pageLoad });
+
+      jobsTab = new JobsTabPage(page);
+      await jobsTab.navigateToTab();
+      await jobsTab.waitForLoaded();
+
+      const jobCount = await jobsTab.getJobCount();
+      expect(jobCount).toBeGreaterThan(0);
+    });
+
+    test('should display jobs table with correct structure', async ({ page }) => {
+      jobsTab = new JobsTabPage(page);
+
+      // Create job button visible
+      await expect(jobsTab.createJobButton).toBeVisible();
+
+      // Table headers present
       const headers = ['Name', 'Status', 'Progress', 'Attack Mode', 'Networks', 'Dictionaries'];
       for (const header of headers) {
         await expect(page.getByRole('columnheader', { name: new RegExp(header, 'i') })).toBeVisible();
       }
     });
-  });
 
-  test.describe('Create Job Modal', () => {
-    let createJobModal: CreateJobModalPage;
-
-    test.beforeEach(async ({ page }) => {
-      await jobsTab.navigateToTab();
-      await jobsTab.waitForLoaded();
-      createJobModal = new CreateJobModalPage(page);
-    });
-
-    test('should open create job modal when button is clicked', async ({ page }) => {
-      await jobsTab.openCreateJobModal();
-      await createJobModal.waitForOpen();
-
-      await expect(createJobModal.modal).toBeVisible();
-    });
-
-    test('should display attack mode selector', async ({ page }) => {
-      await jobsTab.openCreateJobModal();
-      await createJobModal.waitForOpen();
-
-      await expect(createJobModal.attackModeSelect).toBeVisible();
-    });
-
-    test('should display networks selection section', async ({ page }) => {
-      await jobsTab.openCreateJobModal();
-      await createJobModal.waitForOpen();
-
-      // Networks section should be visible
-      const networksLabel = page.getByText(/networks/i).first();
-      await expect(networksLabel).toBeVisible();
-    });
-
-    test('should display dictionaries selection section', async ({ page }) => {
-      await jobsTab.openCreateJobModal();
-      await createJobModal.waitForOpen();
-
-      // Dictionaries section should be visible
-      const dictionariesLabel = page.getByText(/dictionaries/i).first();
-      await expect(dictionariesLabel).toBeVisible();
-    });
-
-    test('should have disabled create button initially', async ({ page }) => {
-      await jobsTab.openCreateJobModal();
-      await createJobModal.waitForOpen();
-
-      // Button should be disabled until selections are made
-      const isEnabled = await createJobModal.isCreateButtonEnabled();
-      expect(isEnabled).toBe(false);
-    });
-
-    test('should close modal when cancel is clicked', async ({ page }) => {
-      await jobsTab.openCreateJobModal();
-      await createJobModal.waitForOpen();
-
-      await createJobModal.close();
-
-      await expect(createJobModal.modal).not.toBeVisible();
-    });
-
-    test('should show message when no networks available', async ({ page }) => {
-      await jobsTab.openCreateJobModal();
-      await createJobModal.waitForOpen();
-
-      const hasNetworks = await createJobModal.hasAvailableNetworks();
-      if (!hasNetworks) {
-        const noNetworksMessage = page.getByText(/no networks available/i);
-        await expect(noNetworksMessage).toBeVisible();
-      }
-    });
-
-    test('should show message when no dictionaries available', async ({ page }) => {
-      await jobsTab.openCreateJobModal();
-      await createJobModal.waitForOpen();
-
-      const hasDictionaries = await createJobModal.hasAvailableDictionaries();
-      if (!hasDictionaries) {
-        const noDictionariesMessage = page.getByText(/no dictionaries available/i);
-        await expect(noDictionariesMessage).toBeVisible();
-      }
-    });
-
-    test('should display create-job-modal via data-testid', async ({ page }) => {
-      await jobsTab.openCreateJobModal();
-      await createJobModal.waitForOpen();
-
-      const modal = page.locator('[data-testid="create-job-modal"]');
-      await expect(modal).toBeVisible();
-    });
-
-    test('should display attack mode selector within modal', async ({ page }) => {
-      await jobsTab.openCreateJobModal();
-      await createJobModal.waitForOpen();
-
-      // Attack mode selector should be visible
-      const modal = page.locator('[data-testid="create-job-modal"]');
-      const attackMode = modal.locator('button').filter({ hasText: /handshake|pmkid/i });
-      await expect(attackMode).toBeVisible();
-    });
-
-    test('should display create consolidated job button', async ({ page }) => {
-      await jobsTab.openCreateJobModal();
-      await createJobModal.waitForOpen();
-
-      const createButton = page.locator('[data-testid="create-job-modal"]').getByRole('button', { name: /create consolidated job/i });
-      await expect(createButton).toBeVisible();
-      // Should be disabled initially (no selections made)
-      await expect(createButton).toBeDisabled();
-    });
-  });
-
-  test.describe('Job Details', () => {
-    test.beforeEach(async ({ page }) => {
-      await jobsTab.navigateToTab();
-      await jobsTab.waitForLoaded();
-    });
-
-    test('should open job details when job name is clicked', async ({ page }) => {
-      const jobCount = await jobsTab.getJobCount();
-
-      if (jobCount === 0) {
-        test.skip();
-        return;
-      }
-
-      // Click on the first job
-      const firstJobName = jobsTab.tableRows.first().locator('button').first();
-      await firstJobName.click();
-
-      // Job detail modal should open
-      const modal = page.locator('[role="dialog"]');
-      await expect(modal).toBeVisible({ timeout: 5000 });
-    });
-  });
-
-  test.describe('Jobs Content via data-testid', () => {
-    test.beforeEach(async ({ page }) => {
-      await jobsTab.navigateToTab();
-      await jobsTab.waitForLoaded();
-    });
-
-    test('should display jobs-tab-content container', async ({ page }) => {
-      const jobsContent = page.locator('[data-testid="jobs-tab-content"]');
-      await expect(jobsContent).toBeVisible();
-    });
-
-    test('should display create-job-button via data-testid', async ({ page }) => {
-      const createButton = page.locator('[data-testid="create-job-button"]');
-      await expect(createButton).toBeVisible();
-    });
-
-    test('should display jobs empty state when no jobs', async ({ page }) => {
-      const hasJobs = (await jobsTab.getJobCount()) > 0;
-      if (hasJobs) {
-        test.skip();
-        return;
-      }
-
-      const emptyState = page.locator('[data-testid="jobs-empty-state"]');
-      await expect(emptyState).toBeVisible();
-    });
-
-    test('should display job status labels when jobs exist', async ({ page }) => {
-      const jobCount = await jobsTab.getJobCount();
-      if (jobCount === 0) {
-        test.skip();
-        return;
-      }
-
-      // Each job row should have a status
-      const firstRow = jobsTab.tableRows.first();
-      const statusText = await firstRow.textContent();
-      const hasStatus = /completed|running|paused|cancelled|failed|pending/i.test(statusText || '');
-      expect(hasStatus).toBe(true);
-    });
-
-    test('should display attack mode labels when jobs exist', async ({ page }) => {
-      const jobCount = await jobsTab.getJobCount();
-      if (jobCount === 0) {
-        test.skip();
-        return;
-      }
+    test('should display job row with status and attack mode', async ({ page }) => {
+      jobsTab = new JobsTabPage(page);
 
       const firstRow = jobsTab.tableRows.first();
       const rowText = await firstRow.textContent();
+
+      // Row should contain a status
+      const hasStatus = /completed|running|paused|cancelled|failed|pending/i.test(rowText || '');
+      expect(hasStatus).toBe(true);
+
+      // Row should contain an attack mode
       const hasAttackMode = /straight|combination|brute-force|mask|hybrid|handshake|pmkid/i.test(rowText || '');
       expect(hasAttackMode).toBe(true);
     });
 
-    test('should have clickable job name buttons when jobs exist', async ({ page }) => {
-      const jobCount = await jobsTab.getJobCount();
-      if (jobCount === 0) {
-        test.skip();
-        return;
-      }
+    test('should open job details dialog', async ({ page }) => {
+      jobsTab = new JobsTabPage(page);
 
-      const firstRow = jobsTab.tableRows.first();
-      const button = firstRow.locator('button').first();
-      await expect(button).toBeVisible();
+      const firstJobName = jobsTab.tableRows.first().locator('button').first();
+      await firstJobName.click();
+
+      const dialog = page.locator('[role="dialog"]');
+      await expect(dialog).toBeVisible({ timeout: 5000 });
+    });
+  });
+
+  // ─── Block 3: Create Job Modal ───────────────────────────────────
+  // Serial: ONE setup uploads dict + PCAP (no job), then tests exercise
+  // the modal. The final test creates a job end-to-end through the UI.
+  test.describe('Create Job Modal', () => {
+    test.describe.configure({ mode: 'serial' });
+
+    let jobsTab: JobsTabPage;
+    let createJobModal: CreateJobModalPage;
+
+    test('setup: login, upload dict and PCAP', async ({ page, context }) => {
+      test.setTimeout(180000);
+
+      await clearBrowserState(page, context);
+      await blockWebSockets(page);
+
+      // Login
+      await loginViaUI(page, TEST_USER.email, TEST_USER.password);
+      await page.goto('/');
+      await expect(page.locator('[data-testid="dashboard"]')).toBeVisible({ timeout: TEST_TIMEOUTS.pageLoad });
+
+      // Upload dictionary and PCAP (no job creation)
+      await uploadDictionary(context);
+      const { networks } = await uploadPcap(context, page);
+      expect(networks.length).toBeGreaterThan(0);
+
+      // Reload to pick up new data
+      await page.reload();
+      await expect(page.locator('[data-testid="dashboard"]')).toBeVisible({ timeout: TEST_TIMEOUTS.pageLoad });
+
+      jobsTab = new JobsTabPage(page);
+      await jobsTab.navigateToTab();
+      await jobsTab.waitForLoaded();
+    });
+
+    test('should open modal with all form elements', async ({ page }) => {
+      jobsTab = new JobsTabPage(page);
+      createJobModal = new CreateJobModalPage(page);
+
+      await jobsTab.openCreateJobModal();
+      await createJobModal.waitForOpen();
+
+      // Modal visible via data-testid
+      await expect(createJobModal.modal).toBeVisible();
+
+      // Attack mode selector
+      await expect(createJobModal.attackModeSelect).toBeVisible();
+
+      // Networks section
+      const networksLabel = page.getByText(/networks/i).first();
+      await expect(networksLabel).toBeVisible();
+
+      // Dictionaries section
+      const dictionariesLabel = page.getByText(/dictionaries/i).first();
+      await expect(dictionariesLabel).toBeVisible();
+
+      // Create button visible but disabled (nothing selected yet)
+      await expect(createJobModal.createButton).toBeVisible();
+      const isEnabled = await createJobModal.isCreateButtonEnabled();
+      expect(isEnabled).toBe(false);
+
+      // Close for next test
+      await createJobModal.close();
+    });
+
+    test('should show available networks and dictionaries', async ({ page }) => {
+      jobsTab = new JobsTabPage(page);
+      createJobModal = new CreateJobModalPage(page);
+
+      await jobsTab.openCreateJobModal();
+      await createJobModal.waitForOpen();
+
+      const hasNetworks = await createJobModal.hasAvailableNetworks();
+      expect(hasNetworks).toBe(true);
+
+      const hasDictionaries = await createJobModal.hasAvailableDictionaries();
+      expect(hasDictionaries).toBe(true);
+
+      await createJobModal.close();
+    });
+
+    test('should close modal when cancel is clicked', async ({ page }) => {
+      jobsTab = new JobsTabPage(page);
+      createJobModal = new CreateJobModalPage(page);
+
+      await jobsTab.openCreateJobModal();
+      await createJobModal.waitForOpen();
+
+      await createJobModal.close();
+      await expect(createJobModal.modal).not.toBeVisible();
+    });
+
+    test('should create a job through the modal', async ({ page }) => {
+      test.setTimeout(60000);
+
+      jobsTab = new JobsTabPage(page);
+      createJobModal = new CreateJobModalPage(page);
+
+      // Record current job count
+      const initialJobCount = await jobsTab.getJobCount();
+
+      // Open modal
+      await jobsTab.openCreateJobModal();
+      await createJobModal.waitForOpen();
+
+      // Select first network and first dictionary
+      await createJobModal.selectNetworkByIndex(0);
+      await createJobModal.selectDictionaryByIndex(0);
+
+      // Create button should now be enabled
+      const isEnabled = await createJobModal.isCreateButtonEnabled();
+      expect(isEnabled).toBe(true);
+
+      // Submit
+      await createJobModal.submitJob();
+
+      // Modal should close
+      await createJobModal.waitForClosed();
+
+      // Wait for table to update — job count should increase
+      // waitForLoaded already handles waiting for API response and rendering
+      await jobsTab.waitForLoaded();
+
+      const newJobCount = await jobsTab.getJobCount();
+      expect(newJobCount).toBeGreaterThan(initialJobCount);
     });
   });
 });

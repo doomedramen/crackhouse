@@ -5,6 +5,7 @@ import { db } from '@/db'
 import { networks as networksSchema, selectNetworkSchema } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { authenticate, getUserId } from '@/middleware/auth'
+import { logger } from '@/lib/logger'
 
 const networksRouter = new Hono()
 
@@ -26,7 +27,7 @@ networksRouter.get('/', async (c) => {
       count: allNetworks.length,
     })
   } catch (error) {
-    console.error('Get networks error:', error)
+    logger.error('Get networks error', 'networks', error instanceof Error ? error : new Error(String(error)))
     return c.json({
       success: false,
       error: 'Failed to fetch networks',
@@ -55,7 +56,7 @@ networksRouter.get('/:id', async (c) => {
       data: network,
     })
   } catch (error) {
-    console.error('Get network error:', error)
+    logger.error('Get network error', 'networks', error instanceof Error ? error : new Error(String(error)))
     return c.json({
       success: false,
       error: 'Failed to fetch network',
@@ -93,7 +94,7 @@ networksRouter.post('/', zValidator('json', z.object({
       data: newNetwork,
     }, 201)
   } catch (error) {
-    console.error('Create network error:', error)
+    logger.error('Create network error', 'networks', error instanceof Error ? error : new Error(String(error)))
     return c.json({
       success: false,
       error: 'Failed to create network',
@@ -133,7 +134,7 @@ networksRouter.put('/:id', zValidator('json', z.object({
       data: updatedNetwork,
     })
   } catch (error) {
-    console.error('Update network error:', error)
+    logger.error('Update network error', 'networks', error instanceof Error ? error : new Error(String(error)))
     return c.json({
       success: false,
       error: 'Failed to update network',
@@ -162,7 +163,7 @@ networksRouter.delete('/:id', async (c) => {
       message: 'Network deleted successfully',
     })
   } catch (error) {
-    console.error('Delete network error:', error)
+    logger.error('Delete network error', 'networks', error instanceof Error ? error : new Error(String(error)))
     return c.json({
       success: false,
       error: 'Failed to delete network',

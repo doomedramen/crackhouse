@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { config, timeouts } from './config';
 
 export interface ApiError {
   message: string;
@@ -7,11 +8,12 @@ export interface ApiError {
 }
 
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+  baseURL: config.apiUrl,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: timeouts.api,
 });
 
 // Request interceptor to add auth token if available

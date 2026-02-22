@@ -12,6 +12,7 @@ import {
   QUEUE_NAMES,
 } from "@/lib/queue";
 import { authenticate, getUserId } from "@/middleware/auth";
+import { logger } from "@/lib/logger";
 
 const queueManagement = new Hono();
 
@@ -197,7 +198,7 @@ queueManagement.post(
         },
       });
     } catch (error) {
-      console.error("Create consolidated cracking job error:", error);
+      logger.error("Create consolidated cracking job error", "queue-management", error instanceof Error ? error : new Error(String(error)));
       return c.json(
         {
           success: false,
@@ -343,7 +344,7 @@ queueManagement.post(
         });
       }
     } catch (error) {
-      console.error("Generate dictionary job error:", error);
+      logger.error("Generate dictionary job error", "queue-management", error instanceof Error ? error : new Error(String(error)));
       return c.json(
         {
           success: false,
@@ -402,7 +403,7 @@ queueManagement.get("/stats", async (c) => {
       },
     });
   } catch (error) {
-    console.error("Get queue stats error:", error);
+    logger.error("Get queue stats error", "queue-management", error instanceof Error ? error : new Error(String(error)));
     return c.json(
       {
         success: false,
@@ -509,7 +510,7 @@ queueManagement.get("/dictionary/templates", async (c) => {
       data: templates,
     });
   } catch (error) {
-    console.error("Get dictionary templates error:", error);
+    logger.error("Get dictionary templates error", "queue-management", error instanceof Error ? error : new Error(String(error)));
     return c.json(
       {
         success: false,
@@ -557,7 +558,7 @@ queueManagement.delete("/jobs/:id", async (c) => {
       job: cancelledJob,
     });
   } catch (error) {
-    console.error("Cancel job error:", error);
+    logger.error("Cancel job error", "queue-management", error instanceof Error ? error : new Error(String(error)));
     return c.json(
       {
         success: false,
@@ -629,7 +630,7 @@ queueManagement.post("/jobs/:id/retry", async (c) => {
       job: retriedJob,
     });
   } catch (error) {
-    console.error("Retry job error:", error);
+    logger.error("Retry job error", "queue-management", error instanceof Error ? error : new Error(String(error)));
     return c.json(
       {
         success: false,
@@ -672,7 +673,7 @@ queueManagement.post(
         strategy: data.strategy,
       });
     } catch (error) {
-      console.error("Cleanup job error:", error);
+      logger.error("Cleanup job error", "queue-management", error instanceof Error ? error : new Error(String(error)));
       return c.json(
         {
           success: false,

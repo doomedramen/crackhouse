@@ -1,142 +1,82 @@
+import { createEnv } from '@t3-oss/env-core'
 import { z } from 'zod'
-import dotenvFlow from 'dotenv-flow'
 
-// Load environment variables
-// dotenv-flow will automatically load:
-// 1. .env (base)
-// 2. .env.local (local overrides, gitignored)
-// 3. .env.{NODE_ENV} (environment-specific, e.g., .env.test)
-// 4. .env.{NODE_ENV}.local (environment-specific local)
-// Files loaded later override earlier ones
-const result = dotenvFlow.config({
-  node_env: process.env.NODE_ENV || 'development',
-  default_node_env: 'development',
-  // Ensure environment-specific files override base .env
-  purge_dotenv: true,
-  silent: true,
-})
+export const env = createEnv({
+  server: {
+    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+    PORT: z.string().default('3001'),
 
-if (result.error) {
-  console.error('Error loading .env file:', result.error)
-}
+    // Database
+    DATABASE_URL: z.string().min(1, 'Database URL is required'),
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.string().default('3001'),
+    // Redis (for Bull queues)
+    REDIS_URL: z.string().default('redis://localhost:6379'),
+    REDIS_HOST: z.string().default('localhost'),
+    REDIS_PORT: z.string().default('6379'),
+    REDIS_PASSWORD: z.string().optional(),
 
-  // Database
-  DATABASE_URL: z.string().min(1, 'Database URL is required'),
+    // Authentication
+    AUTH_SECRET: z.string().min(32, 'Auth secret must be at least 32 characters'),
+    AUTH_URL: z.string().optional(),
 
-  // Redis (for Bull queues)
-  REDIS_URL: z.string().default('redis://localhost:6379'),
-  REDIS_HOST: z.string().default('localhost'),
-  REDIS_PORT: z.string().default('6379'),
-  REDIS_PASSWORD: z.string().optional(),
+    // JWT
+    JWT_SECRET: z.string().min(32, 'JWT secret must be at least 32 characters'),
 
-  // Authentication
-  AUTH_SECRET: z.string().min(32, 'Auth secret must be at least 32 characters'),
-  AUTH_URL: z.string().optional(),
+    // File Upload
+    UPLOAD_DIR: z.string().default('./uploads'),
+    MAX_FILE_SIZE: z.string().default('500MB'),
+    MAX_DICTIONARY_SIZE: z.string().default('10GB'),
 
-  // JWT
-  JWT_SECRET: z.string().min(32, 'JWT secret must be at least 32 characters'),
+    // Storage Quotas
+    USER_QUOTA_BYTES: z.string().default('10737418240'), // 10GB per user
+    SYSTEM_QUOTA_BYTES: z.string().default('107374182400'), // 100GB system total
+    CLEANUP_THRESHOLD_PERCENT: z.string().default('85'), // Cleanup at 85% capacity
+    AUTO_CLEANUP_ENABLED: z.string().default('true'),
+    FILE_RETENTION_DAYS: z.string().default('30'), // Delete files unused for 30 days
 
-  // File Upload
-  UPLOAD_DIR: z.string().default('./uploads'),
-  MAX_FILE_SIZE: z.string().default('500MB'),
-  MAX_DICTIONARY_SIZE: z.string().default('10GB'),
+    // Email (for password reset, etc.)
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.string().default('587'),
+    SMTP_SECURE: z.string().optional(),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    SMTP_FROM: z.string().optional(),
 
-  // Storage Quotas
-  USER_QUOTA_BYTES: z.string().default('10737418240'), // 10GB per user
-  SYSTEM_QUOTA_BYTES: z.string().default('107374182400'), // 100GB system total
-  CLEANUP_THRESHOLD_PERCENT: z.string().default('85'), // Cleanup at 85% capacity
-  AUTO_CLEANUP_ENABLED: z.string().default('true'),
-  FILE_RETENTION_DAYS: z.string().default('30'), // Delete files unused for 30 days
+    // Frontend URL
+    FRONTEND_URL: z.string().default('http://localhost:3000'),
 
-  // Email (for password reset, etc.)
-  SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.string().default('587'),
-  SMTP_SECURE: z.string().optional(),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASS: z.string().optional(),
-  SMTP_FROM: z.string().optional(),
+    // Background Jobs
+    DEFAULT_JOB_TIMEOUT: z.string().default('300000'), // 5 minutes in ms
+    MAX_CONCURRENT_JOBS: z.string().default('5'),
 
-  // Frontend URL
-  FRONTEND_URL: z.string().default('http://localhost:3000'),
+    // Security
+    CORS_ORIGIN: z.string().default('http://localhost:3000'),
+    RATE_LIMIT_WINDOW: z.string().default('60000'), // 1 minute in ms
+    RATE_LIMIT_MAX: z.string().default('1000'), // 1000 requests per minute for development
+  },
 
-  // Background Jobs
-  DEFAULT_JOB_TIMEOUT: z.string().default('300000'), // 5 minutes in ms
-  MAX_CONCURRENT_JOBS: z.string().default('5'),
+  /**
+   * Specify what runs on the server and what runs on the client.
+   * Since this is a backend API, everything is server-side.
+   */
+  runtimeEnv: process.env,
 
-  // Security
-  CORS_ORIGIN: z.string().default('http://localhost:3000'),
-  RATE_LIMIT_WINDOW: z.string().default('60000'), // 1 minute in ms
-  RATE_LIMIT_MAX: z.string().default('1000'), // 1000 requests per minute for development
-})
+  /**
+   * Run validation on the server
+   */
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 
-function validateEnv() {
-  try {
-    const env = envSchema.parse(process.env)
-
-    // Production-specific validations
-    if (env.NODE_ENV === 'production') {
-      const errors = []
-
-      // Check for default/placeholder values that shouldn't be used in production
-      const defaultSecrets = [
-        'your-secret-key-here',
-        'your-jwt-secret-here',
-        'CHANGE_ME_IN_PRODUCTION',
-        'CHANGE_ME_IN_PRODUCTION_MIN_32_CHARS',
-        'password',
-        'test_password',
-        'default'
-      ]
-
-      const secretFields = ['AUTH_SECRET', 'JWT_SECRET', 'DATABASE_URL']
-      secretFields.forEach(field => {
-        const value = env[field as keyof typeof env]
-        if (value && defaultSecrets.some(secret => value.includes(secret))) {
-          errors.push(`❌ SECURITY: ${field} contains default/placeholder value in production`)
-        }
-      })
-
-      // Check database URL for insecure defaults
-      if (env.DATABASE_URL.includes('password') && env.DATABASE_URL.includes('localhost')) {
-        errors.push('❌ SECURITY: Database URL appears to use default credentials in production')
-      }
-
-      // Check for weak authentication secrets
-      if (env.AUTH_SECRET.length < 32) {
-        errors.push('❌ SECURITY: AUTH_SECRET must be at least 32 characters in production')
-      }
-
-      if (env.JWT_SECRET.length < 32) {
-        errors.push('❌ SECURITY: JWT_SECRET must be at least 32 characters in production')
-      }
-
-      if (errors.length > 0) {
-        console.error('🚨 PRODUCTION SECURITY VALIDATION FAILED:')
-        errors.forEach(error => console.error(error))
-        console.error('\n💡 To fix:')
-        console.error('1. Set secure random secrets in your environment')
-        console.error('2. Use environment-specific .env files')
-        console.error('3. Never commit secrets to version control')
-        process.exit(1)
-      }
-
-      console.log('✅ Production environment security validation passed')
-    }
-
-    return env
-  } catch (error) {
+  /**
+   * Called when validation fails
+   */
+  onValidationError: (issues) => {
     console.error('❌ Invalid environment variables:')
-    console.error(error)
+    issues.forEach((issue) => {
+      console.error(`  - ${issue.path.join('.')}: ${issue.message}`)
+    })
     process.exit(1)
-  }
-}
-
-// Validate environment variables after loading them
-export const env = validateEnv()
+  },
+})
 
 // Export individual env vars for convenience
 export const {
@@ -180,4 +120,54 @@ if (NODE_ENV === 'development') {
   if (JWT_SECRET === 'your-jwt-secret-here') {
     console.warn('⚠️  Using default JWT_SECRET in development. Set a proper secret in production!')
   }
+}
+
+// Production security validation
+if (NODE_ENV === 'production') {
+  const errors: string[] = []
+
+  // Check for default/placeholder values that shouldn't be used in production
+  const defaultSecrets = [
+    'your-secret-key-here',
+    'your-jwt-secret-here',
+    'CHANGE_ME_IN_PRODUCTION',
+    'CHANGE_ME_IN_PRODUCTION_MIN_32_CHARS',
+    'password',
+    'test_password',
+    'default'
+  ]
+
+  const secretFields = ['AUTH_SECRET', 'JWT_SECRET', 'DATABASE_URL'] as const
+  secretFields.forEach(field => {
+    const value = env[field]
+    if (value && defaultSecrets.some(secret => value.includes(secret))) {
+      errors.push(`❌ SECURITY: ${field} contains default/placeholder value in production`)
+    }
+  })
+
+  // Check database URL for insecure defaults
+  if (env.DATABASE_URL.includes('password') && env.DATABASE_URL.includes('localhost')) {
+    errors.push('❌ SECURITY: Database URL appears to use default credentials in production')
+  }
+
+  // Check for weak authentication secrets
+  if (env.AUTH_SECRET.length < 32) {
+    errors.push('❌ SECURITY: AUTH_SECRET must be at least 32 characters in production')
+  }
+
+  if (env.JWT_SECRET.length < 32) {
+    errors.push('❌ SECURITY: JWT_SECRET must be at least 32 characters in production')
+  }
+
+  if (errors.length > 0) {
+    console.error('🚨 PRODUCTION SECURITY VALIDATION FAILED:')
+    errors.forEach(error => console.error(error))
+    console.error('\n💡 To fix:')
+    console.error('1. Set secure random secrets in your environment')
+    console.error('2. Use environment-specific .env files')
+    console.error('3. Never commit secrets to version control')
+    process.exit(1)
+  }
+
+  console.log('✅ Production environment security validation passed')
 }

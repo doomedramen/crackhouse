@@ -1,4 +1,5 @@
 import { Page, Locator, expect } from '@playwright/test';
+import { TEST_TIMEOUTS } from '../helpers/wait-helpers';
 
 /**
  * Create Job Modal Page Object
@@ -48,7 +49,7 @@ export class CreateJobModalPage {
   }
 
   async waitForOpen() {
-    await expect(this.modal).toBeVisible({ timeout: 5000 });
+    await expect(this.modal).toBeVisible({ timeout: TEST_TIMEOUTS.modal });
   }
 
   async close() {
@@ -106,10 +107,17 @@ export class CreateJobModalPage {
     return !(await noDictionariesMessage.isVisible());
   }
 
+  async waitForClosed() {
+    await expect(this.modal).not.toBeVisible({ timeout: TEST_TIMEOUTS.api });
+  }
+
   async submitJob() {
     await this.createButton.click();
     // Wait for modal to close on success or error message to appear
-    await this.page.waitForTimeout(1000);
+    await Promise.race([
+      this.waitForClosed(),
+      expect(this.errorMessage).toBeVisible({ timeout: TEST_TIMEOUTS.api }).catch(() => {}),
+    ]);
   }
 
   async getErrorMessage(): Promise<string | null> {

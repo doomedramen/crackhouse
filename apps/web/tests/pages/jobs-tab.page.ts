@@ -1,4 +1,5 @@
 import { Page, Locator, expect } from '@playwright/test';
+import { TEST_TIMEOUTS } from '../helpers/wait-helpers';
 
 /**
  * Jobs Tab Page Object
@@ -42,7 +43,7 @@ export class JobsTabPage {
     await this.page.waitForLoadState('domcontentloaded');
     await this.tab.click();
     // Wait for the jobs tab content to render - avoid networkidle as running jobs cause continuous activity
-    await expect(this.content).toBeVisible({ timeout: 10000 });
+    await expect(this.content).toBeVisible({ timeout: TEST_TIMEOUTS.api });
   }
 
   async isActive(): Promise<boolean> {
@@ -59,10 +60,16 @@ export class JobsTabPage {
     // Error state renders WITHOUT jobs-tab-content wrapper, so scope to page
     const errorState = this.page.locator('.text-destructive').first();
 
-    await expect(table.or(emptyState).or(errorState)).toBeVisible({ timeout: 15000 });
+    await expect(table.or(emptyState).or(errorState)).toBeVisible({ timeout: TEST_TIMEOUTS.long });
   }
 
   async getJobCount(): Promise<number> {
+    // First check if content container is visible
+    const contentVisible = await this.content.isVisible().catch(() => false);
+    if (!contentVisible) {
+      // Content not rendered - might be error state or loading
+      return 0;
+    }
     if (await this.emptyState.isVisible().catch(() => false)) {
       return 0;
     }
