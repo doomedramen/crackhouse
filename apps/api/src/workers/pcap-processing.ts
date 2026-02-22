@@ -99,6 +99,7 @@ export async function processPCAP({
           userId,
           notes: `Extracted from PCAP file. Handshake: ${networkData.hasHandshake}, PMKID: ${networkData.hasPMKID}`,
           key: networkData.hashLine, // Store the HC22000 hash line for cracking
+          filePath: extractionResult.hc22000File || null, // Store the HC22000 file path
         })
         .returning();
 

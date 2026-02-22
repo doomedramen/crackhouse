@@ -11,7 +11,6 @@ import {
   createSafePath,
 } from "../lib/file-path-validator";
 import { logger } from "../lib/logger";
-import { extractHandshake, extractPMKID } from "./pcap-processing";
 import { getWebSocketServer } from "../lib/websocket";
 import { configService } from "../services/config.service";
 import { emailQueue } from "../lib/email-queue";
@@ -189,27 +188,6 @@ export async function runHashcatAttack({
 
     if (!network) {
       throw new Error(`Network ${networkId} not found or access denied`);
-    }
-
-    // Check if job is already cancelled
-    if (job.status === "cancelled") {
-      logger.info("Job is already cancelled, skipping execution", "hashcat", {
-        jobId,
-      });
-
-      await db
-        .update(networks)
-        .set({
-          status: "ready",
-          updatedAt: new Date(),
-        })
-        .where(eq(networks.id, networkId));
-
-      return {
-        success: false,
-        cancelled: true,
-        message: "Job was cancelled before execution",
-      };
     }
 
     // Check job dependencies

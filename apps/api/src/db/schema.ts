@@ -130,6 +130,7 @@ export const networks = pgTable("networks", {
   location: text("location"),
   notes: text("notes"),
   key: text("key"), // HC22000 hash line for cracking
+  filePath: varchar("file_path", { length: 1000 }), // Path to HC22000 hash file
   userId: text("user_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),

@@ -162,6 +162,10 @@ export interface HashcatCrackingJob {
   dictionaryPath: string;
   attackMode: "pmkid" | "handshake";
   userId: string;
+  additionalNetworks?: Array<{
+    id: string;
+    filePath: string;
+  }>;
 }
 
 export interface DictionaryGenerationJob {

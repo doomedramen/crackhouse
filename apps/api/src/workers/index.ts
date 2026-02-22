@@ -77,7 +77,13 @@ export const hashcatCrackingWorker = new Worker<HashcatCrackingJob>(
       dictionaryPath,
       attackMode,
       userId,
+      additionalNetworks,
     } = job.data;
+
+    // Log if additional networks are provided (for future multi-network support)
+    if (additionalNetworks && additionalNetworks.length > 0) {
+      console.log(`Job ${jobId} has ${additionalNetworks.length} additional networks to process`);
+    }
 
     try {
       const result = await runHashcatAttack({
@@ -224,6 +230,7 @@ export const closeWorkers = async () => {
     hashcatCrackingWorker.close(),
     dictionaryGenerationWorker.close(),
     fileCleanupWorker.close(),
+    storageCleanupWorker.close(),
   ]);
 };
 
@@ -234,5 +241,6 @@ export const checkWorkerHealth = () => {
     hashcatCracking: hashcatCrackingWorker.isRunning(),
     dictionaryGeneration: dictionaryGenerationWorker.isRunning(),
     fileCleanup: fileCleanupWorker.isRunning(),
+    storageCleanup: storageCleanupWorker.isRunning(),
   };
 };
