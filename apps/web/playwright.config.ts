@@ -58,9 +58,9 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.CI
     ? [
-       ["html", { outputFolder: "playwright-report", open: "never" }],
-        ["list"]
-//        ["playwright-coverage-reporter", { format: "all" }],
+        ["html", { outputFolder: "playwright-report", open: "never" }],
+        ["list"],
+        //        ["playwright-coverage-reporter", { format: "all" }],
       ]
     : [
         ["html", { outputFolder: "playwright-report", open: "never" }],

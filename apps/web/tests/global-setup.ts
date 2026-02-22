@@ -14,7 +14,7 @@ export default async function globalSetup() {
   // Verify containers are running
   if (!process.env.DATABASE_URL) {
     throw new Error(
-      "DATABASE_URL not set. Run `pnpm test:e2e:start` first to start containers."
+      "DATABASE_URL not set. Run `pnpm test:e2e:start` first to start containers.",
     );
   }
 

@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { useJob, useCancelJob, useRetryJob } from "@/lib/api-hooks";
-import { useJobUpdates } from "@/lib/use-websocket";
 import { formatDate, formatDuration, formatFileSize } from "@/lib/utils";
 import {
   Dialog,
@@ -60,14 +59,12 @@ export function JobDetailModal({
   const setIsOpen = isControlled ? onOpenChange || (() => {}) : setInternalOpen;
 
   const { data: jobData, isLoading, error, refetch } = useJob(jobId);
-  const jobUpdate = useJobUpdates(jobId);
   const cancelMutation = useCancelJob(jobId);
   const retryMutation = useRetryJob(jobId);
 
   const job = jobData?.data;
-  const realTimeStatus = jobUpdate?.status || job?.status;
-  const realTimeProgress =
-    jobUpdate?.progress !== undefined ? jobUpdate.progress : job?.progress;
+  const realTimeStatus = job?.status;
+  const realTimeProgress = job?.progress;
 
   const handleCopyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -478,54 +475,54 @@ export function JobDetailModal({
                 </div>
               )}
 
-              {/* Real-time Progress Metrics */}
-              {realTimeStatus === "running" && jobUpdate?.metadata && (
+              {/* Progress Metrics */}
+              {realTimeStatus === "running" && job?.metadata && (
                 <div>
                   <h3 className="text-lg font-semibold font-mono mb-3 flex items-center gap-2">
                     <Zap className="h-5 w-5 text-purple-500" />
                     Cracking Progress
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
-                    {jobUpdate.metadata.passwordsPerSecond > 0 && (
+                    {job.metadata.passwordsPerSecond > 0 && (
                       <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
                         <div className="text-xs text-blue-600 font-mono mb-1">
                           Speed
                         </div>
                         <div className="text-2xl font-bold text-blue-900">
-                          {formatSpeed(jobUpdate.metadata.passwordsPerSecond)}
+                          {formatSpeed(job.metadata.passwordsPerSecond)}
                         </div>
                       </div>
                     )}
 
-                    {jobUpdate.metadata.eta > 0 && (
+                    {job.metadata.eta > 0 && (
                       <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
                         <div className="text-xs text-purple-600 font-mono mb-1">
                           Time Remaining
                         </div>
                         <div className="text-2xl font-bold text-purple-900">
-                          {formatETA(jobUpdate.metadata.eta)}
+                          {formatETA(job.metadata.eta)}
                         </div>
                       </div>
                     )}
 
-                    {jobUpdate.metadata.passwordsTested > 0 && (
+                    {job.metadata.passwordsTested > 0 && (
                       <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
                         <div className="text-xs text-green-600 font-mono mb-1">
                           Passwords Tested
                         </div>
                         <div className="text-2xl font-bold text-green-900">
-                          {jobUpdate.metadata.passwordsTested.toLocaleString()}
+                          {job.metadata.passwordsTested.toLocaleString()}
                         </div>
                       </div>
                     )}
 
-                    {jobUpdate.metadata.hashcatStatus?.recovered && (
+                    {job.metadata.hashcatStatus?.recovered && (
                       <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg border border-yellow-200">
                         <div className="text-xs text-yellow-600 font-mono mb-1">
                           Recovered
                         </div>
                         <div className="text-2xl font-bold text-yellow-900">
-                          {jobUpdate.metadata.hashcatStatus.recovered}
+                          {job.metadata.hashcatStatus.recovered}
                         </div>
                       </div>
                     )}
@@ -533,30 +530,28 @@ export function JobDetailModal({
                 </div>
               )}
 
-              {/* Real-time Updates */}
-              {jobUpdate && (
+              {/* Live Status */}
+              {realTimeStatus === "running" && job && (
                 <div>
                   <h3 className="text-lg font-semibold font-mono mb-3 flex items-center gap-2">
                     <Activity className="h-5 w-5 text-blue-500" />
-                    Live Updates
+                    Live Status
                   </h3>
                   <div className="text-sm text-muted-foreground font-mono bg-blue-50 p-3 rounded border border-blue-200">
                     <div className="space-y-1">
                       <div>
                         Status:{" "}
-                        <span className="font-medium">{jobUpdate.status}</span>
+                        <span className="font-medium">{job.status}</span>
                       </div>
                       <div>
                         Progress:{" "}
-                        <span className="font-medium">
-                          {jobUpdate.progress}%
-                        </span>
+                        <span className="font-medium">{job.progress}%</span>
                       </div>
-                      {jobUpdate.metadata?.stage && (
+                      {job.metadata?.stage && (
                         <div>
                           Stage:{" "}
                           <span className="font-medium capitalize">
-                            {jobUpdate.metadata.stage.replace(/_/g, " ")}
+                            {job.metadata.stage.replace(/_/g, " ")}
                           </span>
                         </div>
                       )}

@@ -305,11 +305,9 @@ export async function setupForJobsTest(
     networks.find((n) => n.hasHandshake) ?? networks[0]!;
 
   // Step 4: Create a job (single network against multiple dictionaries)
-  const jobId = await createJob(
-    context,
-    networkWithHandshake.id,
-    [dictionary.id],
-  );
+  const jobId = await createJob(context, networkWithHandshake.id, [
+    dictionary.id,
+  ]);
 
   return {
     dictionaryId: dictionary.id,

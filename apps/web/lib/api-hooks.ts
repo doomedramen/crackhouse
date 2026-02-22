@@ -238,7 +238,15 @@ export function useJobs() {
   return useQuery({
     queryKey: ["jobs"],
     queryFn: () => ApiClient.get("/api/jobs"),
-    staleTime: 10 * 1000, // Jobs update frequently
+    staleTime: 5 * 1000,
+    refetchInterval: (query) => {
+      const jobs = (query.state.data as any)?.data;
+      if (!jobs) return false;
+      const hasActive = jobs.some((j: any) =>
+        ["running", "pending"].includes(j.status),
+      );
+      return hasActive ? 3000 : false;
+    },
     select: (data: any) => ({
       data: data.data || [],
       count: data.count || 0,
@@ -251,7 +259,11 @@ export function useJob(id: string) {
     queryKey: ["jobs", id],
     queryFn: () => ApiClient.get(`/api/jobs/${id}`),
     enabled: !!id,
-    staleTime: 5 * 1000,
+    staleTime: 3 * 1000,
+    refetchInterval: (query) => {
+      const status = (query.state.data as any)?.data?.status;
+      return ["running", "pending"].includes(status) ? 3000 : false;
+    },
     select: (data: any) => ({
       data: data.data,
       success: data.success,
@@ -299,6 +311,7 @@ export function useQueueStats() {
     queryKey: ["queue", "stats"],
     queryFn: () => ApiClient.get("/api/queue/stats"),
     staleTime: 5 * 1000,
+    refetchInterval: 5 * 1000,
   });
 }
 
@@ -494,6 +507,7 @@ export function useResults(params?: {
     queryKey: ["results", params],
     queryFn: () => ResultsApi.getResults(params),
     staleTime: 10 * 1000,
+    refetchInterval: 10 * 1000,
     select: (data: any) => ({
       data: data.data || [],
       count: data.count || 0,
@@ -559,7 +573,8 @@ export function useResultsStats() {
   return useQuery({
     queryKey: ["results", "stats"],
     queryFn: () => ResultsApi.getResultsStats(),
-    staleTime: 30 * 1000, // Stats change less frequently
+    staleTime: 10 * 1000,
+    refetchInterval: 10 * 1000,
     select: (data: any) => ({
       byType: data.data?.byType || {},
       crackedNetworks: data.data?.crackedNetworks || 0,

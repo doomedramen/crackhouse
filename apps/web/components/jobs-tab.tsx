@@ -191,10 +191,11 @@ export function JobsTab({ className }: JobsTabProps) {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {(job.networks || []).length}
+                        {job.network ? 1 : 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {(job.dictionaries || []).length}
+                        {job.config?.dictionaryCount ??
+                          (job.dictionary ? 1 : 0)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {job.startedAt && (

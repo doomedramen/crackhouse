@@ -56,13 +56,12 @@ export class JobsTabPage {
   async waitForLoaded() {
     // Wait for the API to respond and content to render
     // Either a table (has jobs), empty state (no jobs), or error state should appear
-    // Use Playwright's .or() API for reliable compound matching
-    const table = this.content.locator("table");
+    // Check for table first (most common success case), then empty state, then error
+    const table = this.content.locator("table").first();
     const emptyState = this.content.locator('[data-testid="jobs-empty-state"]');
-    // Error state renders WITHOUT jobs-tab-content wrapper, so scope to page
-    const errorState = this.page.locator(".text-destructive").first();
 
-    await expect(table.or(emptyState).or(errorState)).toBeVisible({
+    // Wait for either table or empty state to be visible (both are within content)
+    await expect(table.or(emptyState)).toBeVisible({
       timeout: TEST_TIMEOUTS.long,
     });
   }
@@ -77,7 +76,16 @@ export class JobsTabPage {
     if (await this.emptyState.isVisible().catch(() => false)) {
       return 0;
     }
-    return this.tableRows.count();
+    // Wait for at least one row to appear before counting
+    try {
+      await this.tableRows.first().waitFor({
+        state: "visible",
+        timeout: 5000,
+      });
+      return await this.tableRows.count();
+    } catch {
+      return 0;
+    }
   }
 
   async getJobByName(name: string): Promise<Locator | null> {

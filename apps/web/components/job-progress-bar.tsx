@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useJobUpdates } from "@/lib/use-websocket";
+import { useJob } from "@/lib/api-hooks";
 import { Progress } from "@workspace/ui/components/progress";
 import { Badge } from "@workspace/ui/components/badge";
 import {
@@ -10,8 +10,6 @@ import {
   XCircle,
   AlertCircle,
   Loader2,
-  Play,
-  Pause,
   Zap,
   Activity,
 } from "lucide-react";
@@ -31,13 +29,13 @@ export function JobProgressBar({
   showDetails = false,
   className = "",
 }: JobProgressBarProps) {
-  const jobUpdate = useJobUpdates(jobId);
+  const { data: jobData } = useJob(jobId);
+  const job = jobData?.data;
 
-  // Use real-time updates if available, otherwise fall back to initial values
-  const status = jobUpdate?.status || initialStatus;
-  const progress =
-    jobUpdate?.progress !== undefined ? jobUpdate.progress : initialProgress;
-  const metadata = jobUpdate?.metadata;
+  // Use polled data if available, otherwise fall back to initial values
+  const status = job?.status || initialStatus;
+  const progress = job?.progress !== undefined ? job.progress : initialProgress;
+  const metadata = job?.metadata;
 
   const getStatusIcon = () => {
     switch (status) {
@@ -53,23 +51,6 @@ export function JobProgressBar({
         return <AlertCircle className="h-4 w-4 text-yellow-500" />;
       default:
         return <Clock className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "running":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "completed":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "failed":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "cancelled":
-        return "bg-gray-100 text-gray-800 border-gray-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -144,10 +125,10 @@ export function JobProgressBar({
           <span>{progress}%</span>
           {showDetails && (
             <>
-              {jobUpdate?.startTime && (
+              {job?.startTime && (
                 <>
                   <Clock className="h-3 w-3" />
-                  {formatDuration(jobUpdate.startTime, jobUpdate.endTime)}
+                  {formatDuration(job.startTime, job.endTime)}
                 </>
               )}
             </>
@@ -205,20 +186,20 @@ export function JobProgressBar({
           )}
 
           {/* Error Message */}
-          {jobUpdate?.errorMessage && status === "failed" && (
+          {job?.errorMessage && status === "failed" && (
             <div className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
-              <strong>Error:</strong> {jobUpdate.errorMessage}
+              <strong>Error:</strong> {job.errorMessage}
             </div>
           )}
 
           {/* Success Result */}
-          {jobUpdate?.result && status === "completed" && (
+          {job?.result && status === "completed" && (
             <div className="text-xs text-green-600 bg-green-50 p-2 rounded border border-green-200">
               <strong>Success:</strong>{" "}
-              {typeof jobUpdate.result === "object" &&
-              jobUpdate.result.passwordsFound !== undefined
-                ? `Found ${jobUpdate.result.passwordsFound} password(s)`
-                : JSON.stringify(jobUpdate.result)}
+              {typeof job.result === "object" &&
+              job.result.passwordsFound !== undefined
+                ? `Found ${job.result.passwordsFound} password(s)`
+                : JSON.stringify(job.result)}
             </div>
           )}
         </div>

@@ -105,10 +105,10 @@ export async function seedConfig() {
     },
     {
       id: "hashcatJobTimeout",
-      value: 86400,
+      value: 60, // 60 seconds for E2E tests (real crack takes ~20s)
       category: "performance",
       type: "number",
-      defaultValue: 86400,
+      defaultValue: 60,
     },
     {
       id: "allowUserRegistration",
@@ -166,7 +166,10 @@ export async function seedConfig() {
       await sql`
         INSERT INTO config (id, value, category, type, default_value, is_read_only, requires_restart, updated_at)
         VALUES (${cfg.id}, ${JSON.stringify(cfg.value)}, ${cfg.category}, ${cfg.type}, ${JSON.stringify(cfg.defaultValue)}, false, false, NOW())
-        ON CONFLICT (id) DO NOTHING
+        ON CONFLICT (id) DO UPDATE SET
+          value = EXCLUDED.value,
+          default_value = EXCLUDED.default_value,
+          updated_at = NOW()
       `;
     } catch (error) {
       // Config might already exist

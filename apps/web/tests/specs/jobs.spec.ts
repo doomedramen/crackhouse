@@ -84,7 +84,8 @@ test.describe("Jobs Tab", () => {
       test.setTimeout(180000);
 
       await clearBrowserState(page, context);
-      await blockWebSockets(page);
+      // Don't block WebSockets - jobs need real-time updates and blocking causes connection timeouts
+      // await blockWebSockets(page);
 
       // Login
       await loginViaUI(page, TEST_USER.email, TEST_USER.password);
@@ -105,6 +106,9 @@ test.describe("Jobs Tab", () => {
       // Create job via API (single network against multiple dictionaries)
       const jobId = await createJob(context, network.id, [dict.id]);
       expect(jobId).toBeTruthy();
+
+      // Wait a moment for the job to be persisted and visible via API
+      await page.waitForTimeout(1000);
 
       // Reload to pick up new data
       await page.reload();

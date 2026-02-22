@@ -30,7 +30,7 @@ const ENV_FILE = resolve(__dirname, ".env.e2e.local");
 const STATE_FILE = resolve(__dirname, ".e2e-containers.json");
 const migrationsFolder = resolve(
   __dirname,
-  "../../../apps/api/src/db/migrations"
+  "../../../apps/api/src/db/migrations",
 );
 
 const command = process.argv[2];
@@ -59,6 +59,9 @@ async function start() {
   console.log("🚀 Starting E2E containers...");
 
   const { containers, ports } = await startTestContainers();
+
+  // Small delay to ensure containers are fully ready
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   // Set environment variables for this process
   const databaseUrl = `postgresql://postgres:password@localhost:${ports.postgresPort}/crackhouse_test`;
@@ -129,11 +132,11 @@ async function stop() {
       // Find and stop containers by port mapping
       const postgresContainer = execSync(
         `docker ps -q --filter "publish=${state.postgresPort}"`,
-        { encoding: "utf-8" }
+        { encoding: "utf-8" },
       ).trim();
       const redisContainer = execSync(
         `docker ps -q --filter "publish=${state.redisPort}"`,
-        { encoding: "utf-8" }
+        { encoding: "utf-8" },
       ).trim();
 
       if (postgresContainer) {
@@ -145,7 +148,9 @@ async function stop() {
         console.log("   Stopped Redis container");
       }
     } catch (e) {
-      console.log("   Note: Could not stop via docker CLI, containers may have already stopped");
+      console.log(
+        "   Note: Could not stop via docker CLI, containers may have already stopped",
+      );
     }
   } catch (e) {
     console.log("   Warning: Could not read state file");

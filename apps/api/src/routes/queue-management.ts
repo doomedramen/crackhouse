@@ -88,10 +88,7 @@ queueManagement.post(
       const path = await import("path");
 
       // Create temporary directory for consolidated files
-      const tmpDir = path.join(
-        env.TEMP_DIR,
-        `crackjob-${Date.now()}`,
-      );
+      const tmpDir = path.join(env.TEMP_DIR, `crackjob-${Date.now()}`);
       await fs.mkdir(tmpDir, { recursive: true });
 
       let dictionaryPath: string;

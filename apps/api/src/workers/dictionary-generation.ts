@@ -37,9 +37,13 @@ async function broadcastDictionaryProgress(
     });
   } catch (error) {
     // Log but don't fail the operation if WebSocket fails
-    logger.warn("Failed to broadcast dictionary progress", "dictionary-generation", {
-      error: error instanceof Error ? error : new Error(String(error)),
-    });
+    logger.warn(
+      "Failed to broadcast dictionary progress",
+      "dictionary-generation",
+      {
+        error: error instanceof Error ? error : new Error(String(error)),
+      },
+    );
   }
 }
 

@@ -1,5 +1,9 @@
 import { Page, BrowserContext, expect } from "@playwright/test";
-import { waitForDebounce, waitForAuthCookies, TEST_TIMEOUTS } from "./wait-helpers";
+import {
+  waitForDebounce,
+  waitForAuthCookies,
+  TEST_TIMEOUTS,
+} from "./wait-helpers";
 
 /**
  * Auth helpers for E2E tests

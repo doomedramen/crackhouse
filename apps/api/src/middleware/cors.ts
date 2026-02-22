@@ -21,8 +21,7 @@ export interface CORSConfig {
 const defaultCORSConfig: CORSConfig = {
   enabled: true,
   mode:
-    (env.NODE_ENV as "development" | "staging" | "production") ||
-    "development",
+    (env.NODE_ENV as "development" | "staging" | "production") || "development",
   allowedOrigins: [],
   allowedMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: [
@@ -60,9 +59,7 @@ function getProductionOrigins(): string[] {
 
   // Add CORS_ORIGIN if specified
   if (env.CORS_ORIGIN) {
-    origins.push(
-      ...env.CORS_ORIGIN.split(",").map((origin) => origin.trim()),
-    );
+    origins.push(...env.CORS_ORIGIN.split(",").map((origin) => origin.trim()));
   }
 
   // Add specific production domains

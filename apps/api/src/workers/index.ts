@@ -1,3 +1,6 @@
+// Load environment variables based on NODE_ENV
+import "dotenv-flow/config";
+
 import { Worker } from "bullmq";
 import Redis from "ioredis";
 import { env } from "../config/env";
@@ -226,19 +229,27 @@ fileCleanupWorker.on("error", (error) => {
 
 // Logging for debugging
 pcapProcessingWorker.on("completed", (job) => {
-  logger.info("PCAP Processing job completed", "worker:pcap", { jobId: job.id });
+  logger.info("PCAP Processing job completed", "worker:pcap", {
+    jobId: job.id,
+  });
 });
 
 hashcatCrackingWorker.on("completed", (job) => {
-  logger.info("Hashcat Cracking job completed", "worker:hashcat", { jobId: job.id });
+  logger.info("Hashcat Cracking job completed", "worker:hashcat", {
+    jobId: job.id,
+  });
 });
 
 dictionaryGenerationWorker.on("completed", (job) => {
-  logger.info("Dictionary Generation job completed", "worker:dictionary", { jobId: job.id });
+  logger.info("Dictionary Generation job completed", "worker:dictionary", {
+    jobId: job.id,
+  });
 });
 
 fileCleanupWorker.on("completed", (job) => {
-  logger.info("File Cleanup job completed", "worker:file-cleanup", { jobId: job.id });
+  logger.info("File Cleanup job completed", "worker:file-cleanup", {
+    jobId: job.id,
+  });
 });
 
 // Graceful shutdown for workers

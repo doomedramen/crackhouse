@@ -290,11 +290,15 @@ export async function runHashcatAttack({
     });
 
     // Validate attack file path
+    // Note: UPLOAD_DIR may be set to different paths (e.g., ./uploads/test for tests)
+    const uploadDir = env.UPLOAD_DIR.replace(/^\.\//, "");
     const validatedHandshakePath = await validateFilePath(validatedAttackFile, {
       allowedBasePaths: [
         "temp/handshakes",
         "data/handshakes",
         "uploads/handshakes",
+        `${uploadDir}/captures`, // PCAP processing creates HC22000 files here
+        `${uploadDir}/handshakes`,
         "temp/pmkids",
       ],
       allowedExtensions: [".hc22000", ".cap", ".pcap", ".pmkid"],
@@ -308,6 +312,7 @@ export async function runHashcatAttack({
         "temp/dictionaries",
         "data/dictionaries",
         "uploads/dictionaries",
+        `${uploadDir}/dictionaries`,
         "/tmp", // Consolidated dictionaries are created in /tmp
       ],
       allowedExtensions: [".txt", ".lst", ".dict"],
