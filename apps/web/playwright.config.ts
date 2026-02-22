@@ -1,11 +1,26 @@
 import { defineConfig, devices } from "@playwright/test";
 import path from "path";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { fileURLToPath } from "url";
 
 // ES module compatibility for __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load E2E container env FIRST (before any other config)
+// This is set by `pnpm test:e2e:start` and contains testcontainer ports
+const e2eEnvPath = path.resolve(__dirname, "tests/.env.e2e.local");
+if (existsSync(e2eEnvPath)) {
+  const e2eEnvContent = readFileSync(e2eEnvPath, "utf-8");
+  e2eEnvContent.split("\n").forEach((line) => {
+    const [key, ...valueParts] = line.split("=");
+    if (key && !key.startsWith("#") && valueParts.length > 0) {
+      const value = valueParts.join("=").trim();
+      process.env[key] = value;
+    }
+  });
+  console.log("📦 Loaded E2E container environment from .env.e2e.local");
+}
 
 // Load .env.test file manually to avoid dotenv dependency
 try {
@@ -15,7 +30,10 @@ try {
     const [key, ...valueParts] = line.split("=");
     if (key && !key.startsWith("#") && valueParts.length > 0) {
       const value = valueParts.join("=").trim();
-      process.env[key] = value;
+      // Don't override E2E env values
+      if (!process.env[key]) {
+        process.env[key] = value;
+      }
     }
   });
 } catch {
@@ -40,14 +58,14 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.CI
     ? [
-        ["html", { outputFolder: "playwright-report", open: "never" }],
-        ["list"],
-        ["playwright-coverage-reporter", { format: "all" }],
+       ["html", { outputFolder: "playwright-report", open: "never" }],
+        ["list"]
+//        ["playwright-coverage-reporter", { format: "all" }],
       ]
     : [
         ["html", { outputFolder: "playwright-report", open: "never" }],
         ["list"],
-        ["playwright-coverage-reporter", { format: "all" }],
+        // ["playwright-coverage-reporter", { format: "all" }],
       ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
@@ -108,8 +126,8 @@ export default defineConfig({
   webServer: [
     {
       // API Server + Worker (Hono + BullMQ)
-      // Testcontainers are started by launch-e2e.ts before Playwright runs.
-      // DATABASE_URL/REDIS_* are already in the environment.
+      // Containers must be started first: `pnpm test:e2e:start`
+      // DATABASE_URL/REDIS_* are loaded from tests/.env.e2e.local
       // Worker runs in background (&), API in foreground so Playwright can check health endpoint.
       command:
         "NODE_ENV=test PORT=3001 pnpm run worker & NODE_ENV=test PORT=3001 pnpm run dev",

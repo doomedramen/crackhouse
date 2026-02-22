@@ -16,6 +16,7 @@ export interface TestPorts {
 
 /**
  * Start Postgres 16 and Redis 7 containers in parallel.
+ * Containers are reusable (withReuse) so they persist across process exits.
  * Returns container handles and dynamic port mappings.
  */
 export async function startTestContainers(): Promise<{
@@ -36,12 +37,14 @@ export async function startTestContainers(): Promise<{
         Wait.forLogMessage(/database system is ready to accept connections/, 2),
       )
       .withStartupTimeout(60_000)
+      .withReuse() // Keep container running after process exits
       .start(),
 
     new GenericContainer("redis:7-alpine")
       .withExposedPorts(6379)
       .withWaitStrategy(Wait.forLogMessage(/Ready to accept connections/))
       .withStartupTimeout(30_000)
+      .withReuse() // Keep container running after process exits
       .start(),
   ]);
 
