@@ -1,4 +1,4 @@
-import postgres from 'postgres';
+import postgres from "postgres";
 
 /**
  * Database helper for E2E tests
@@ -9,7 +9,7 @@ function getDatabaseUrl(): string {
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error(
-      'DATABASE_URL is not set. Testcontainers global setup should set it automatically.',
+      "DATABASE_URL is not set. Testcontainers global setup should set it automatically.",
     );
   }
   return url;
@@ -30,21 +30,21 @@ export function getTestDb() {
 export async function cleanDatabase() {
   const sql = getTestDb();
 
-  console.log('🧹 Cleaning test database...');
+  console.log("🧹 Cleaning test database...");
 
   // Delete all data in reverse order of dependencies
   // Note: config is NOT deleted - it's seeded once and persisted
   const tables = [
-    'audit_logs',
-    'job_results',
-    'jobs',
-    'captures',
-    'dictionaries',
-    'networks',
-    'verifications',
-    'sessions',
-    'accounts',
-    'users',
+    "audit_logs",
+    "job_results",
+    "jobs",
+    "captures",
+    "dictionaries",
+    "networks",
+    "verifications",
+    "sessions",
+    "accounts",
+    "users",
   ];
 
   for (const table of tables) {
@@ -56,7 +56,7 @@ export async function cleanDatabase() {
   }
 
   await sql.end();
-  console.log('✅ Test database cleaned');
+  console.log("✅ Test database cleaned");
 }
 
 /**
@@ -65,22 +65,100 @@ export async function cleanDatabase() {
 export async function seedConfig() {
   const sql = getTestDb();
 
-  console.log('⚙️ Seeding config values...');
+  console.log("⚙️ Seeding config values...");
 
   const configValues = [
-    { id: 'maxConcurrentJobs', value: 2, category: 'performance', type: 'number', defaultValue: 2 },
-    { id: 'maxPcapSize', value: 524288000, category: 'general', type: 'number', defaultValue: 524288000 },
-    { id: 'maxDictionarySize', value: 10737418240, category: 'general', type: 'number', defaultValue: 10737418240 },
-    { id: 'maxGeneratedDictSize', value: 21474836480, category: 'general', type: 'number', defaultValue: 21474836480 },
-    { id: 'hashcatDefaultWorkload', value: 3, category: 'performance', type: 'number', defaultValue: 3 },
-    { id: 'hashcatJobTimeout', value: 86400, category: 'performance', type: 'number', defaultValue: 86400 },
-    { id: 'allowUserRegistration', value: false, category: 'security', type: 'boolean', defaultValue: false },
-    { id: 'sessionExpiry', value: 604800, category: 'security', type: 'number', defaultValue: 604800 },
-    { id: 'cache-dictionaries', value: true, category: 'performance', type: 'boolean', defaultValue: true },
-    { id: 'cache-ttl-seconds', value: 300, category: 'performance', type: 'number', defaultValue: 300 },
-    { id: 'rateLimitUpload', value: 5, category: 'security', type: 'number', defaultValue: 5 },
-    { id: 'rateLimitAuth', value: 10, category: 'security', type: 'number', defaultValue: 10 },
-    { id: 'email-enabled', value: false, category: 'general', type: 'boolean', defaultValue: false },
+    {
+      id: "maxConcurrentJobs",
+      value: 2,
+      category: "performance",
+      type: "number",
+      defaultValue: 2,
+    },
+    {
+      id: "maxPcapSize",
+      value: 524288000,
+      category: "general",
+      type: "number",
+      defaultValue: 524288000,
+    },
+    {
+      id: "maxDictionarySize",
+      value: 10737418240,
+      category: "general",
+      type: "number",
+      defaultValue: 10737418240,
+    },
+    {
+      id: "maxGeneratedDictSize",
+      value: 21474836480,
+      category: "general",
+      type: "number",
+      defaultValue: 21474836480,
+    },
+    {
+      id: "hashcatDefaultWorkload",
+      value: 3,
+      category: "performance",
+      type: "number",
+      defaultValue: 3,
+    },
+    {
+      id: "hashcatJobTimeout",
+      value: 86400,
+      category: "performance",
+      type: "number",
+      defaultValue: 86400,
+    },
+    {
+      id: "allowUserRegistration",
+      value: false,
+      category: "security",
+      type: "boolean",
+      defaultValue: false,
+    },
+    {
+      id: "sessionExpiry",
+      value: 604800,
+      category: "security",
+      type: "number",
+      defaultValue: 604800,
+    },
+    {
+      id: "cache-dictionaries",
+      value: true,
+      category: "performance",
+      type: "boolean",
+      defaultValue: true,
+    },
+    {
+      id: "cache-ttl-seconds",
+      value: 300,
+      category: "performance",
+      type: "number",
+      defaultValue: 300,
+    },
+    {
+      id: "rateLimitUpload",
+      value: 5,
+      category: "security",
+      type: "number",
+      defaultValue: 5,
+    },
+    {
+      id: "rateLimitAuth",
+      value: 10,
+      category: "security",
+      type: "number",
+      defaultValue: 10,
+    },
+    {
+      id: "email-enabled",
+      value: false,
+      category: "general",
+      type: "boolean",
+      defaultValue: false,
+    },
   ];
 
   for (const cfg of configValues) {
@@ -96,7 +174,7 @@ export async function seedConfig() {
   }
 
   await sql.end();
-  console.log('✅ Config values seeded');
+  console.log("✅ Config values seeded");
 }
 
 /**
@@ -109,13 +187,13 @@ export async function createTestUser(options: {
   name: string;
   role?: string;
 }): Promise<{ id: string; email: string; name: string; role: string }> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   // Use Better Auth's sign-up endpoint to create user with properly hashed password
   const response = await fetch(`${apiUrl}/api/auth/sign-up/email`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       email: options.email,
@@ -137,7 +215,7 @@ export async function createTestUser(options: {
   }
 
   // If a specific role is needed, update it in the database
-  if (options.role && options.role !== 'user') {
+  if (options.role && options.role !== "user") {
     const sql = getTestDb();
     await sql`
       UPDATE users SET role = ${options.role} WHERE email = ${options.email}
@@ -149,7 +227,7 @@ export async function createTestUser(options: {
     id: userId,
     email: options.email,
     name: options.name,
-    role: options.role || 'user',
+    role: options.role || "user",
   };
 }
 
@@ -164,8 +242,8 @@ export async function createTestUserDirect(options: {
   role?: string;
 }) {
   const sql = getTestDb();
-  const bcrypt = await import('bcryptjs');
-  const { v4: uuidv4 } = await import('uuid');
+  const bcrypt = await import("bcryptjs");
+  const { v4: uuidv4 } = await import("uuid");
 
   const userId = uuidv4();
   const hashedPassword = await bcrypt.hash(options.password, 10);
@@ -173,7 +251,7 @@ export async function createTestUserDirect(options: {
   // Create user
   await sql`
     INSERT INTO users (id, email, name, role, email_verified, created_at, updated_at)
-    VALUES (${userId}, ${options.email}, ${options.name}, ${options.role || 'user'}, true, NOW(), NOW())
+    VALUES (${userId}, ${options.email}, ${options.name}, ${options.role || "user"}, true, NOW(), NOW())
   `;
 
   // Create account for credential auth
@@ -185,7 +263,12 @@ export async function createTestUserDirect(options: {
 
   await sql.end();
 
-  return { id: userId, email: options.email, name: options.name, role: options.role || 'user' };
+  return {
+    id: userId,
+    email: options.email,
+    name: options.name,
+    role: options.role || "user",
+  };
 }
 
 /**

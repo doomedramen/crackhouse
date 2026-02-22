@@ -3,9 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "private": true,
-  "scripts": {
-    "lint": "eslint . --max-warnings 0"
-  },
+  "scripts": {},
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -60,9 +58,7 @@
     "@types/node": "^25.0.6",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
-    "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "eslint": "^9.39.2",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3"
   },

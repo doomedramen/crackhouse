@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { configService } from "./config.service";
 import { logger } from "../lib/logger";
+import { env } from "@/config/env";
 import { db } from "../db/index";
 import { auditLogs } from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -433,7 +434,7 @@ class EmailService {
               </table>
               
               <p style="margin-top: 20px;">
-                <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/jobs" style="background: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Job Details</a>
+                <a href="${env.FRONTEND_URL}/jobs" style="background: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Job Details</a>
               </p>
             </div>
             <div style="background: #f0f0f0; padding: 20px; text-align: center; color: #666; font-size: 12px;">
@@ -455,7 +456,7 @@ class EmailService {
       ${jobData.passwordsFound ? `Passwords Found: ${jobData.passwordsFound}` : ""}
       ${jobData.errorMessage ? `Error: ${jobData.errorMessage}` : ""}
       
-      Visit ${process.env.FRONTEND_URL || "http://localhost:3000"}/jobs/${jobData.jobId} for details.
+      Visit ${env.FRONTEND_URL}/jobs/${jobData.jobId} for details.
     `;
   }
 
@@ -492,7 +493,7 @@ class EmailService {
                 .join("")}
               
               <p style="margin-top: 20px;">
-                <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/admin/health" style="background: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Health Dashboard</a>
+                <a href="${env.FRONTEND_URL}/admin/health" style="background: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Health Dashboard</a>
               </p>
             </div>
           </div>
@@ -516,7 +517,7 @@ class EmailService {
         )
         .join("\n")}
       
-      Visit ${process.env.FRONTEND_URL || "http://localhost:3000"}/admin/health for details.
+      Visit ${env.FRONTEND_URL}/admin/health for details.
     `;
   }
 
@@ -634,7 +635,7 @@ class EmailService {
               ${securityData.timestamp ? `<p><strong>Time:</strong> ${new Date(securityData.timestamp).toISOString()}</p>` : ""}
               
               <p style="margin: 20px 0;">
-                <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/settings" style="background: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Review Account Security</a>
+                <a href="${env.FRONTEND_URL}/settings" style="background: #2196F3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Review Account Security</a>
               </p>
               
               <p style="color: #666; font-size: 14px;">If this was not you, please contact support immediately.</p>
@@ -661,7 +662,7 @@ class EmailService {
       ${securityData.ipAddress ? `IP Address: ${securityData.ipAddress}` : ""}
       ${securityData.timestamp ? `Time: ${new Date(securityData.timestamp).toISOString()}` : ""}
       
-      Visit ${process.env.FRONTEND_URL || "http://localhost:3000"}/settings to review.
+      Visit ${env.FRONTEND_URL}/settings to review.
       
       If this was not you, please contact support immediately.
     `;

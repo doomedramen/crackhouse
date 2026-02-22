@@ -1,0 +1,45 @@
+{
+  "name": "CrackHouse",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+
+  // Features to add to the dev container
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+
+  // Environment variables for VS Code and terminals
+  "remoteEnv": {
+    "DATABASE_URL": "postgresql://postgres:password@db:5432/autopwn_development",
+    "REDIS_URL": "redis://redis:6379",
+    "REDIS_HOST": "redis",
+    "REDIS_PORT": "6379",
+    "AUTH_SECRET": "development-secret-key-minimum-32-characters",
+    "JWT_SECRET": "development-jwt-secret-key-minimum-32-chars",
+    "NODE_ENV": "development"
+  },
+
+  // Configure tool-specific properties
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ms-playwright.playwright"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "typescript.preferences.importModuleSpecifier": "relative"
+      }
+    }
+  },
+
+  // Post-create command - run after the container is created
+  "postCreateCommand": "pnpm install",
+
+  // Post-start command - run migrations after services are ready
+  "postStartCommand": "cd apps/api && pnpm db:push || true"
+}

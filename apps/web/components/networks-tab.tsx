@@ -157,12 +157,19 @@ export function NetworksTab({ className }: NetworksTabProps) {
               className="w-full pl-10 pr-3 py-2 border rounded-md bg-background font-mono text-sm"
             />
           </div>
-          <UploadModal defaultTab="pcap" onUploadSuccess={(type) => {
-            if (type === 'pcap') {
-              refetch();
-            }
-          }}>
-            <Button variant="outline" className="font-mono text-sm" data-testid="networks-upload-pcap-button">
+          <UploadModal
+            defaultTab="pcap"
+            onUploadSuccess={(type) => {
+              if (type === "pcap") {
+                refetch();
+              }
+            }}
+          >
+            <Button
+              variant="outline"
+              className="font-mono text-sm"
+              data-testid="networks-upload-pcap-button"
+            >
               <Upload className="h-4 w-4 mr-2" />
               upload pcap
             </Button>

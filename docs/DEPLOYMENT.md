@@ -10,23 +10,27 @@
 ## Quick Deploy
 
 1. Pull the repository
+
 ```bash
 git clone https://github.com/doomedramen/crackhouse.git
 cd crackhouse
 ```
 
 2. Configure environment
+
 ```bash
 cp .env.example .env
 nano .env  # Edit with your values
 ```
 
 3. Start services
+
 ```bash
 docker compose up -d
 ```
 
 4. Run migrations
+
 ```bash
 docker exec -it crackhouse-api pnpm db:push
 ```
@@ -134,11 +138,13 @@ sudo crontab -e
 ## Backups
 
 ### Database Backup
+
 ```bash
 docker exec crackhouse-db pg_dump -U postgres crackhouse | gzip > backup.sql.gz
 ```
 
 ### Restore
+
 ```bash
 gunzip -c backup.sql.gz | docker exec -i crackhouse-db psql -U postgres crackhouse
 ```
@@ -146,17 +152,20 @@ gunzip -c backup.sql.gz | docker exec -i crackhouse-db psql -U postgres crackhou
 ## Monitoring
 
 ### Health Check
+
 ```bash
 curl https://yourdomain.com/api/health
 ```
 
 ### Logs
+
 ```bash
 docker compose logs -f api
 docker compose logs -f web
 ```
 
 ### Resource Usage
+
 ```bash
 docker stats crackhouse-api crackhouse-web
 ```

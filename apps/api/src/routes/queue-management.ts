@@ -13,19 +13,20 @@ import {
 } from "@/lib/queue";
 import { authenticate, getUserId } from "@/middleware/auth";
 import { logger } from "@/lib/logger";
+import { env } from "@/config/env";
 
 const queueManagement = new Hono();
 
 // Apply authentication middleware to all routes
 queueManagement.use("*", authenticate);
 
-// Create cracking job (consolidated - accepts multiple networks and dictionaries)
+// Create cracking job (one network against multiple dictionaries - 1:1 or 1:many)
 queueManagement.post(
   "/crack",
   zValidator(
     "json",
     z.object({
-      networkIds: z.array(z.string().min(1)).min(1),
+      networkId: z.string().min(1),
       dictionaryIds: z.array(z.string().min(1)).min(1),
       attackMode: z.enum(["pmkid", "handshake"]).default("handshake"),
     }),
@@ -35,23 +36,35 @@ queueManagement.post(
     const userId = getUserId(c);
 
     try {
-      const { networkIds, dictionaryIds, attackMode } = data;
+      const { networkId, dictionaryIds, attackMode } = data;
 
       // Import inArray for querying multiple records
       const { inArray } = await import("drizzle-orm");
 
-      // Fetch all networks
-      const fetchedNetworks = await db.query.networks.findMany({
-        where: inArray(networks.id, networkIds),
+      // Fetch the network
+      const network = await db.query.networks.findFirst({
+        where: eq(networks.id, networkId),
       });
 
-      if (fetchedNetworks.length !== networkIds.length) {
+      if (!network) {
         return c.json(
           {
             success: false,
-            error: "One or more networks not found",
+            error: "Network not found",
           },
           404,
+        );
+      }
+
+      // Verify the network has a hash file
+      if (!network.filePath) {
+        return c.json(
+          {
+            success: false,
+            error:
+              "Network has no hash file. The PCAP may not have been processed correctly.",
+          },
+          400,
         );
       }
 
@@ -75,88 +88,106 @@ queueManagement.post(
       const path = await import("path");
 
       // Create temporary directory for consolidated files
-      const tmpDir = path.join(process.env.TEMP_DIR || "/tmp", `consolidated-${Date.now()}`);
+      const tmpDir = path.join(
+        env.TEMP_DIR,
+        `crackjob-${Date.now()}`,
+      );
       await fs.mkdir(tmpDir, { recursive: true });
 
-      // Consolidate dictionaries: concatenate all dictionary files
-      const consolidatedDictionaryPath = path.join(tmpDir, "consolidated.txt");
-      const dictionaryWriteStream = (await import("fs")).createWriteStream(consolidatedDictionaryPath);
+      let dictionaryPath: string;
+      let dictionaryId: string;
+      let totalWords: number;
 
-      for (const dict of fetchedDictionaries) {
-        if (dict.filePath) {
-          const dictContent = await fs.readFile(dict.filePath, "utf-8");
-          dictionaryWriteStream.write(dictContent);
-          // Add newline between dictionaries if not already present
-          if (!dictContent.endsWith("\n")) {
-            dictionaryWriteStream.write("\n");
+      if (fetchedDictionaries.length === 1) {
+        // Single dictionary - use directly without consolidation
+        dictionaryPath = fetchedDictionaries[0].filePath || "";
+        dictionaryId = fetchedDictionaries[0].id;
+        totalWords = fetchedDictionaries[0].wordCount || 0;
+      } else {
+        // Multiple dictionaries - consolidate by concatenating
+        const consolidatedDictionaryPath = path.join(
+          tmpDir,
+          "consolidated.txt",
+        );
+        const dictionaryWriteStream = (await import("fs")).createWriteStream(
+          consolidatedDictionaryPath,
+        );
+
+        for (const dict of fetchedDictionaries) {
+          if (dict.filePath) {
+            const dictContent = await fs.readFile(dict.filePath, "utf-8");
+            dictionaryWriteStream.write(dictContent);
+            // Add newline between dictionaries if not already present
+            if (!dictContent.endsWith("\n")) {
+              dictionaryWriteStream.write("\n");
+            }
           }
         }
+        dictionaryWriteStream.end();
+
+        // Wait for stream to finish
+        await new Promise<void>((resolve, reject) => {
+          dictionaryWriteStream.on("finish", resolve);
+          dictionaryWriteStream.on("error", reject);
+        });
+
+        // Count total words in consolidated dictionary
+        const consolidatedContent = await fs.readFile(
+          consolidatedDictionaryPath,
+          "utf-8",
+        );
+        totalWords = consolidatedContent
+          .split("\n")
+          .filter((line: string) => line.trim()).length;
+
+        // Get the file size of the consolidated dictionary
+        const dictionaryStats = await fs.stat(consolidatedDictionaryPath);
+
+        // Create a consolidated dictionary record
+        const [consolidatedDictionary] = await db
+          .insert(dictionaries)
+          .values({
+            name: `Consolidated (${fetchedDictionaries.length} dicts, ${totalWords.toLocaleString()} words)`,
+            filename: `consolidated-${Date.now()}.txt`,
+            filePath: consolidatedDictionaryPath,
+            wordCount: totalWords,
+            size: dictionaryStats.size,
+            type: "generated",
+            status: "ready",
+            encoding: "utf-8",
+            userId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .returning();
+
+        dictionaryPath = consolidatedDictionaryPath;
+        dictionaryId = consolidatedDictionary.id;
       }
-      dictionaryWriteStream.end();
 
-      // Wait for stream to finish
-      await new Promise<void>((resolve, reject) => {
-        dictionaryWriteStream.on("finish", resolve);
-        dictionaryWriteStream.on("error", reject);
-      });
+      // Create job name
+      const networkName = network.ssid || network.bssid;
+      const jobName =
+        fetchedDictionaries.length === 1
+          ? `Crack: ${networkName} with ${fetchedDictionaries[0].name}`
+          : `Crack: ${networkName} with ${fetchedDictionaries.length} dictionaries`;
 
-      // Count total words in consolidated dictionary
-      const consolidatedContent = await fs.readFile(consolidatedDictionaryPath, "utf-8");
-      const totalWords = consolidatedContent.split("\n").filter((line: string) => line.trim()).length;
-
-      // Get the file size of the consolidated dictionary
-      const dictionaryStats = await fs.stat(consolidatedDictionaryPath);
-
-      // Create a consolidated dictionary record
-      const [consolidatedDictionary] = await db
-        .insert(dictionaries)
-        .values({
-          name: `Consolidated (${fetchedDictionaries.length} dicts, ${totalWords.toLocaleString()} words)`,
-          filename: `consolidated-${Date.now()}.txt`,
-          filePath: consolidatedDictionaryPath,
-          wordCount: totalWords,
-          size: dictionaryStats.size,
-          type: "generated",
-          status: "ready",
-          encoding: "utf-8",
-          userId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .returning();
-
-      // Consolidate PCAPs/handshakes: combine all network capture files
-      // For handshake/PMKID attacks, we need to combine the handshake files
-      const consolidatedHandshakePath = path.join(tmpDir, "consolidated.hccapx");
-
-      // If we have multiple networks, we'll use hashcat's ability to handle multiple hashes
-      // by combining them into a single file or using the first network's file
-      // For now, we'll create a job that references all networks
-
-      // Create job name based on networks
-      const networkNames = fetchedNetworks.map((n) => n.ssid || n.bssid).join(", ");
-      const jobName = `Consolidated Job: ${fetchedNetworks.length} networks, ${fetchedDictionaries.length} dicts`;
-
-      // Create a single consolidated job record
-      // Use the first network as primary reference, but store all network IDs
+      // Create the job record
       const [newJob] = await db
         .insert(jobs)
         .values({
           name: jobName,
-          networkId: fetchedNetworks[0].id, // Primary network
-          dictionaryId: consolidatedDictionary.id,
+          networkId: network.id,
+          dictionaryId: dictionaryId,
           status: "pending",
           config: {
             attackMode: data.attackMode,
             queued: true,
             type: "cracking",
-            consolidated: true,
-            networkIds, // Store all network IDs
+            consolidated: fetchedDictionaries.length > 1,
             dictionaryIds, // Store original dictionary IDs
-            networkCount: fetchedNetworks.length,
             dictionaryCount: fetchedDictionaries.length,
             totalWords,
-            networks: fetchedNetworks.map((n) => ({ id: n.id, ssid: n.ssid, bssid: n.bssid })),
           },
           userId,
           createdAt: new Date(),
@@ -164,33 +195,29 @@ queueManagement.post(
         })
         .returning();
 
-      // Add to queue with consolidated dictionary
-      // For multiple networks, hashcat can process multiple hashes if we provide them
+      // Add to queue
       await addHashcatCrackingJob({
         jobId: newJob.id,
-        networkId: fetchedNetworks[0].id,
-        dictionaryId: consolidatedDictionary.id,
-        handshakePath: fetchedNetworks[0].filePath || "",
-        dictionaryPath: consolidatedDictionaryPath,
+        networkId: network.id,
+        dictionaryId: dictionaryId,
+        handshakePath: network.filePath,
+        dictionaryPath: dictionaryPath,
         attackMode: data.attackMode,
         userId,
-        additionalNetworks: fetchedNetworks.slice(1).map((n) => ({
-          id: n.id,
-          filePath: n.filePath || "",
-        })),
       });
 
       return c.json({
         success: true,
-        message: `Consolidated cracking job created with ${fetchedNetworks.length} networks and ${fetchedDictionaries.length} dictionaries (${totalWords.toLocaleString()} total words)`,
+        message: `Cracking job created for network "${networkName}" with ${fetchedDictionaries.length} dictionary(${fetchedDictionaries.length > 1 ? "ies" : ""}) (${totalWords.toLocaleString()} total words)`,
         job: {
           id: newJob.id,
           name: jobName,
-          networkIds,
+          networkId: network.id,
+          networkName: networkName,
           dictionaryIds,
-          consolidatedDictionaryId: consolidatedDictionary.id,
+          consolidatedDictionaryId:
+            fetchedDictionaries.length > 1 ? dictionaryId : null,
           totalWords,
-          networkCount: fetchedNetworks.length,
           dictionaryCount: fetchedDictionaries.length,
           attackMode: data.attackMode,
           status: "pending",
@@ -198,11 +225,15 @@ queueManagement.post(
         },
       });
     } catch (error) {
-      logger.error("Create consolidated cracking job error", "queue-management", error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "Create cracking job error",
+        "queue-management",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return c.json(
         {
           success: false,
-          error: "Failed to create consolidated cracking job",
+          error: "Failed to create cracking job",
           message: error instanceof Error ? error.message : "Unknown error",
         },
         500,
@@ -325,9 +356,8 @@ queueManagement.post(
         }
 
         // Import generateDictionary function for synchronous processing
-        const { generateDictionary } = await import(
-          "@/workers/dictionary-generation"
-        );
+        const { generateDictionary } =
+          await import("@/workers/dictionary-generation");
 
         const newDictionary = await generateDictionary({
           name: data.name,
@@ -344,7 +374,11 @@ queueManagement.post(
         });
       }
     } catch (error) {
-      logger.error("Generate dictionary job error", "queue-management", error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "Generate dictionary job error",
+        "queue-management",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return c.json(
         {
           success: false,
@@ -403,7 +437,11 @@ queueManagement.get("/stats", async (c) => {
       },
     });
   } catch (error) {
-    logger.error("Get queue stats error", "queue-management", error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      "Get queue stats error",
+      "queue-management",
+      error instanceof Error ? error : new Error(String(error)),
+    );
     return c.json(
       {
         success: false,
@@ -417,9 +455,8 @@ queueManagement.get("/stats", async (c) => {
 // Get predefined word lists and transformation options
 queueManagement.get("/dictionary/templates", async (c) => {
   try {
-    const { defaultWordLists } = await import(
-      "@/workers/dictionary-generation"
-    );
+    const { defaultWordLists } =
+      await import("@/workers/dictionary-generation");
 
     const templates = {
       wordLists: {
@@ -510,7 +547,11 @@ queueManagement.get("/dictionary/templates", async (c) => {
       data: templates,
     });
   } catch (error) {
-    logger.error("Get dictionary templates error", "queue-management", error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      "Get dictionary templates error",
+      "queue-management",
+      error instanceof Error ? error : new Error(String(error)),
+    );
     return c.json(
       {
         success: false,
@@ -558,7 +599,11 @@ queueManagement.delete("/jobs/:id", async (c) => {
       job: cancelledJob,
     });
   } catch (error) {
-    logger.error("Cancel job error", "queue-management", error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      "Cancel job error",
+      "queue-management",
+      error instanceof Error ? error : new Error(String(error)),
+    );
     return c.json(
       {
         success: false,
@@ -630,7 +675,11 @@ queueManagement.post("/jobs/:id/retry", async (c) => {
       job: retriedJob,
     });
   } catch (error) {
-    logger.error("Retry job error", "queue-management", error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      "Retry job error",
+      "queue-management",
+      error instanceof Error ? error : new Error(String(error)),
+    );
     return c.json(
       {
         success: false,
@@ -673,7 +722,11 @@ queueManagement.post(
         strategy: data.strategy,
       });
     } catch (error) {
-      logger.error("Cleanup job error", "queue-management", error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        "Cleanup job error",
+        "queue-management",
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return c.json(
         {
           success: false,

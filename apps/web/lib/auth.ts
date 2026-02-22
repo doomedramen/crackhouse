@@ -1,5 +1,5 @@
-import { createAuthClient } from 'better-auth/react'
-import { authConfig } from './config'
+import { createAuthClient } from "better-auth/react";
+import { authConfig } from "./config";
 
 export const authClient = createAuthClient({
   baseURL: authConfig.baseURL,
@@ -7,4 +7,4 @@ export const authClient = createAuthClient({
   features: {
     // Enable social providers if needed
   },
-})
+});

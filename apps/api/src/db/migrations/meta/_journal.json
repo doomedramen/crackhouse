@@ -64,6 +64,13 @@
       "when": 1736676600000,
       "tag": "0008_add_scheduled_status",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1740249600000,
+      "tag": "0009_add_network_file_path",
+      "breakpoints": true
     }
   ]
 }

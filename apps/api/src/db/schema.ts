@@ -17,8 +17,6 @@ import {
   dictionaryProcessingConfigSchema,
   jobConfigSchema,
   jobResultSchema,
-  jobResultDataSchema,
-  jobProgressMetadataSchema,
 } from "./jsonb-schemas";
 
 // Enums
@@ -187,7 +185,13 @@ export const jobs = pgTable("jobs", {
   dependsOn: jsonb("depends_on").$type<string[]>().default([]),
   tags: varchar("tags", { length: 255 }).array().default([]),
   progressMetadata: jsonb("progress_metadata").$type<{
-    stage?: 'validation' | 'extraction' | 'preparation' | 'cracking' | 'parsing' | 'completed';
+    stage?:
+      | "validation"
+      | "extraction"
+      | "preparation"
+      | "cracking"
+      | "parsing"
+      | "completed";
     stageProgress?: number;
     currentAction?: string;
     eta?: number;

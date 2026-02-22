@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { logger } from "../lib/logger";
 import { healthCheckService } from "../services/health-check.service";
 import { publicApiCORS } from "../middleware/cors";
+import { env } from "@/config/env";
 
 const healthRoutes = new Hono();
 
@@ -20,7 +21,7 @@ healthRoutes.get("/", async (c) => {
       timestamp: new Date().toISOString(),
       service: "crackhouse-api",
       version: "1.0.0",
-      environment: process.env.NODE_ENV || "development",
+      environment: env.NODE_ENV,
     });
   } catch (error) {
     logger.error("Health check failed", "health-api", {

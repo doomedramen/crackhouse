@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
 
 /**
  * Dictionaries Tab Page Object
@@ -30,26 +30,32 @@ export class DictionariesTabPage {
     this.content = page.locator('[data-testid="dictionaries-content"]');
 
     // Action buttons
-    this.uploadButton = page.locator('[data-testid="dictionaries-upload-button"]');
-    this.generateButton = page.getByRole('button', { name: /generate dictionary/i });
-    this.mergeButton = page.getByRole('button', { name: /merge dictionaries/i });
+    this.uploadButton = page.locator(
+      '[data-testid="dictionaries-upload-button"]',
+    );
+    this.generateButton = page.getByRole("button", {
+      name: /generate dictionary/i,
+    });
+    this.mergeButton = page.getByRole("button", {
+      name: /merge dictionaries/i,
+    });
 
     // Table
-    this.dictionariesTable = page.locator('table');
-    this.tableRows = page.locator('table tbody tr');
+    this.dictionariesTable = page.locator("table");
+    this.tableRows = page.locator("table tbody tr");
     this.emptyState = page.getByText(/no dictionaries found/i);
-    this.loadingIndicator = page.locator('.animate-spin');
+    this.loadingIndicator = page.locator(".animate-spin");
   }
 
   async navigateToTab() {
     await this.tab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
     await expect(this.content).toBeVisible({ timeout: 10000 });
   }
 
   async isActive(): Promise<boolean> {
-    const tabClass = await this.tab.getAttribute('class');
-    return tabClass?.includes('border-primary') ?? false;
+    const tabClass = await this.tab.getAttribute("class");
+    return tabClass?.includes("border-primary") ?? false;
   }
 
   async waitForLoaded() {

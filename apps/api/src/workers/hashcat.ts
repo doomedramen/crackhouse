@@ -14,6 +14,7 @@ import { logger } from "../lib/logger";
 import { getWebSocketServer } from "../lib/websocket";
 import { configService } from "../services/config.service";
 import { emailQueue } from "../lib/email-queue";
+import { env } from "@/config/env";
 
 const execAsync = promisify(exec);
 
@@ -40,7 +41,9 @@ function parseHashcatStatus(output: string): Partial<HashcatStatus> {
   const status: Partial<HashcatStatus> = {};
 
   // Progress: 1234567/10000000 (12.35%)
-  const progressMatch = output.match(/Progress\.*:\s*(\d+)\/(\d+)\s*\((\d+\.?\d*)%\)/);
+  const progressMatch = output.match(
+    /Progress\.*:\s*(\d+)\/(\d+)\s*\((\d+\.?\d*)%\)/,
+  );
   if (progressMatch) {
     status.passwordsTested = parseInt(progressMatch[1], 10);
     status.totalPasswords = parseInt(progressMatch[2], 10);
@@ -53,10 +56,10 @@ function parseHashcatStatus(output: string): Partial<HashcatStatus> {
     const speedValue = parseFloat(speedMatch[1]);
     const unit = speedMatch[2];
     const multipliers: Record<string, number> = {
-      'H/s': 1,
-      'kH/s': 1000,
-      'MH/s': 1000000,
-      'GH/s': 1000000000
+      "H/s": 1,
+      "kH/s": 1000,
+      "MH/s": 1000000,
+      "GH/s": 1000000000,
     };
     status.speed = speedValue * (multipliers[unit] || 1);
     status.speedUnit = unit;
@@ -69,9 +72,11 @@ function parseHashcatStatus(output: string): Partial<HashcatStatus> {
   }
 
   // Time.Estimated...: (30 mins, 15 secs)
-  const etaMatch = output.match(/Time\.Estimated\.*:.*?\((\d+)\s*mins?,\s*(\d+)\s*secs?\)/);
+  const etaMatch = output.match(
+    /Time\.Estimated\.*:.*?\((\d+)\s*mins?,\s*(\d+)\s*secs?\)/,
+  );
   if (etaMatch) {
-    status.eta = (parseInt(etaMatch[1], 10) * 60) + parseInt(etaMatch[2], 10);
+    status.eta = parseInt(etaMatch[1], 10) * 60 + parseInt(etaMatch[2], 10);
   }
 
   return status;
@@ -343,9 +348,9 @@ export async function runHashcatAttack({
 
     // Stage 1: Validation complete
     await smartUpdateJobProgress(jobId, 5, {
-      stage: 'preparation',
-      currentAction: 'Validating job configuration',
-      stageProgress: 100
+      stage: "preparation",
+      currentAction: "Validating job configuration",
+      stageProgress: 100,
     });
 
     // Prepare hashcat command with validated paths
@@ -368,7 +373,7 @@ export async function runHashcatAttack({
     await fs.mkdir(workDir, { recursive: true });
 
     let hashcatProcess: any;
-    let statusBuffer = '';
+    let statusBuffer = "";
     let lastProgressUpdate = Date.now();
     const PROGRESS_UPDATE_INTERVAL = 2000; // 2 seconds
     let result;
@@ -376,41 +381,45 @@ export async function runHashcatAttack({
     try {
       // Build hashcat arguments array (safer than command string)
       const hashcatArgs = [
-        '-m', attackMode === "pmkid" ? '16800' : '22000',
-        '-a', '0',
-        '--quiet',
-        '--force',
-        '-O',
-        '-w', '4',
+        "-m",
+        attackMode === "pmkid" ? "16800" : "22000",
+        "-a",
+        "0",
+        "--quiet",
+        "--force",
+        "-O",
+        "-w",
+        "4",
         `--runtime=${job.config.runtime || 3600}`,
         `--session=${jobId}`,
-        '-o', path.join(workDir, 'hashcat_output.txt'),
-        `--potfile-path=${path.join(workDir, 'hashcat.pot')}`,
-        '--potfile-disable', // Disable global potfile to ensure we always run the attack
-        '--status',
-        '--status-timer=2',
+        "-o",
+        path.join(workDir, "hashcat_output.txt"),
+        `--potfile-path=${path.join(workDir, "hashcat.pot")}`,
+        "--potfile-disable", // Disable global potfile to ensure we always run the attack
+        "--status",
+        "--status-timer=2",
         validatedHandshakePath,
-        validatedDictionaryPath
+        validatedDictionaryPath,
       ];
 
       // Initial progress update
       await smartUpdateJobProgress(jobId, 0, {
-        stage: 'cracking',
-        currentAction: 'Starting hashcat...',
-        stageProgress: 0
+        stage: "cracking",
+        currentAction: "Starting hashcat...",
+        stageProgress: 0,
       });
 
       // Spawn hashcat process for streaming output
-      hashcatProcess = spawn('hashcat', hashcatArgs);
+      hashcatProcess = spawn("hashcat", hashcatArgs);
 
       // Process stdout data in real-time
-      hashcatProcess.stdout.on('data', (data: Buffer) => {
+      hashcatProcess.stdout.on("data", (data: Buffer) => {
         statusBuffer += data.toString();
-        const statusBlocks = statusBuffer.split('\n\n');
-        statusBuffer = statusBlocks.pop() || '';
+        const statusBlocks = statusBuffer.split("\n\n");
+        statusBuffer = statusBlocks.pop() || "";
 
         for (const block of statusBlocks) {
-          if (block.includes('Progress') || block.includes('Speed')) {
+          if (block.includes("Progress") || block.includes("Speed")) {
             const status = parseHashcatStatus(block);
             const now = Date.now();
 
@@ -419,26 +428,30 @@ export async function runHashcatAttack({
               lastProgressUpdate = now;
 
               smartUpdateJobProgress(jobId, status.progress || 0, {
-                stage: 'cracking',
-                currentAction: `Testing passwords (${status.recovered || '0/1'})`,
+                stage: "cracking",
+                currentAction: `Testing passwords (${status.recovered || "0/1"})`,
                 stageProgress: status.progress || 0,
                 eta: status.eta,
                 passwordsTested: status.passwordsTested,
                 passwordsPerSecond: status.speed,
-                dictionaryProgress: status.totalPasswords ? {
-                  current: status.passwordsTested || 0,
-                  total: status.totalPasswords
-                } : undefined,
+                dictionaryProgress: status.totalPasswords
+                  ? {
+                      current: status.passwordsTested || 0,
+                      total: status.totalPasswords,
+                    }
+                  : undefined,
                 hashcatStatus: {
                   recovered: status.recovered,
                   speed: status.speedUnit,
-                  progress: status.progress ? `${status.progress.toFixed(2)}%` : undefined
-                }
-              }).catch(err =>
-                logger.warn('Failed to update progress', 'hashcat', {
+                  progress: status.progress
+                    ? `${status.progress.toFixed(2)}%`
+                    : undefined,
+                },
+              }).catch((err) =>
+                logger.warn("Failed to update progress", "hashcat", {
                   jobId,
-                  error: err.message
-                })
+                  error: err.message,
+                }),
               );
             }
           }
@@ -446,42 +459,41 @@ export async function runHashcatAttack({
       });
 
       // Log stderr for debugging
-      hashcatProcess.stderr.on('data', (data: Buffer) => {
-        logger.debug('Hashcat stderr', 'hashcat', {
+      hashcatProcess.stderr.on("data", (data: Buffer) => {
+        logger.debug("Hashcat stderr", "hashcat", {
           jobId,
-          output: data.toString()
+          output: data.toString(),
         });
       });
 
       // Wait for process completion with cancellation support
       const exitCode = await new Promise<number>((resolve, reject) => {
-        hashcatProcess.on('close', (code: number) => resolve(code));
-        hashcatProcess.on('error', (error: Error) => reject(error));
+        hashcatProcess.on("close", (code: number) => resolve(code));
+        hashcatProcess.on("error", (error: Error) => reject(error));
 
         // Poll for cancellation every second
         const cancellationCheck = setInterval(async () => {
           try {
             const currentJob = await db.query.jobs.findFirst({
-              where: eq(jobs.id, jobId)
+              where: eq(jobs.id, jobId),
             });
-            if (currentJob?.status === 'cancelled') {
+            if (currentJob?.status === "cancelled") {
               clearInterval(cancellationCheck);
-              hashcatProcess.kill('SIGTERM');
-              reject(new Error('Job cancelled'));
+              hashcatProcess.kill("SIGTERM");
+              reject(new Error("Job cancelled"));
             }
           } catch (error) {
-            logger.error('Cancellation check failed', 'hashcat', {
+            logger.error("Cancellation check failed", "hashcat", {
               jobId,
-              error
+              error,
             });
           }
         }, 1000);
 
-        hashcatProcess.on('close', () => clearInterval(cancellationCheck));
+        hashcatProcess.on("close", () => clearInterval(cancellationCheck));
       });
 
-      result = { stdout: '', stderr: '', exitCode };
-
+      result = { stdout: "", stderr: "", exitCode };
     } catch (execError) {
       logger.error("Hashcat execution failed", "hashcat", {
         jobId,
@@ -508,9 +520,9 @@ export async function runHashcatAttack({
 
     // Stage 2: Hashcat completed, parsing results
     await smartUpdateJobProgress(jobId, 90, {
-      stage: 'parsing',
-      currentAction: 'Parsing hashcat output',
-      stageProgress: 0
+      stage: "parsing",
+      currentAction: "Parsing hashcat output",
+      stageProgress: 0,
     });
 
     // Process results
@@ -572,11 +584,16 @@ export async function runHashcatAttack({
         .where(eq(jobs.id, jobId));
 
       // Stage 3: Completion
-      await smartUpdateJobProgress(jobId, 100, {
-        stage: 'completed',
-        currentAction: `Found ${crackedPasswords.length} password(s)`,
-        stageProgress: 100
-      }, true); // Force immediate update
+      await smartUpdateJobProgress(
+        jobId,
+        100,
+        {
+          stage: "completed",
+          currentAction: `Found ${crackedPasswords.length} password(s)`,
+          stageProgress: 100,
+        },
+        true,
+      ); // Force immediate update
 
       logger.info("Hashcat attack completed successfully", "hashcat", {
         jobId,
@@ -660,11 +677,16 @@ export async function runHashcatAttack({
         .where(eq(networks.id, networkId));
 
       // Stage 3: Completion (no passwords found)
-      await smartUpdateJobProgress(jobId, 100, {
-        stage: 'completed',
-        currentAction: 'No passwords found',
-        stageProgress: 100
-      }, true); // Force immediate update
+      await smartUpdateJobProgress(
+        jobId,
+        100,
+        {
+          stage: "completed",
+          currentAction: "No passwords found",
+          stageProgress: 100,
+        },
+        true,
+      ); // Force immediate update
 
       logger.info("Hashcat attack completed - no passwords found", "hashcat", {
         jobId,
@@ -953,9 +975,12 @@ async function ensureAttackFileExists(
 
   // If we have a network key (HC22000 hash line), write it to a temp file
   if (networkKey) {
-    const tempFilePath = path.join(workDir, `${bssid.replace(/:/g, '')}.hc22000`);
+    const tempFilePath = path.join(
+      workDir,
+      `${bssid.replace(/:/g, "")}.hc22000`,
+    );
 
-    await fs.writeFile(tempFilePath, networkKey, 'utf-8');
+    await fs.writeFile(tempFilePath, networkKey, "utf-8");
 
     logger.info("Attack file created from network key", "hashcat", {
       tempFilePath,
@@ -972,7 +997,7 @@ async function ensureAttackFileExists(
   });
 
   throw new Error(
-    `No handshake file available for BSSID ${bssid}. Please upload a PCAP file containing a handshake for this network.`
+    `No handshake file available for BSSID ${bssid}. Please upload a PCAP file containing a handshake for this network.`,
   );
 }
 
@@ -1002,13 +1027,13 @@ async function smartUpdateJobProgress(
   jobId: string,
   progress: number,
   metadata?: any,
-  force: boolean = false
+  force: boolean = false,
 ): Promise<void> {
   const now = Date.now();
   const state = progressStates.get(jobId) || {
     lastDbWrite: 0,
     lastWsBroadcast: 0,
-    currentProgress: 0
+    currentProgress: 0,
   };
 
   state.currentProgress = progress;
@@ -1016,27 +1041,28 @@ async function smartUpdateJobProgress(
   progressStates.set(jobId, state);
 
   // Determine if we should write to DB or broadcast
-  const shouldWriteDb = force ||
-    (now - state.lastDbWrite >= DB_UPDATE_INTERVAL) ||
+  const shouldWriteDb =
+    force ||
+    now - state.lastDbWrite >= DB_UPDATE_INTERVAL ||
     progress === 0 ||
     progress === 100;
 
-  const shouldBroadcast = force ||
-    (now - state.lastWsBroadcast >= WS_BROADCAST_INTERVAL);
+  const shouldBroadcast =
+    force || now - state.lastWsBroadcast >= WS_BROADCAST_INTERVAL;
 
   // Update database (less frequently)
   if (shouldWriteDb) {
     const updateData: any = {
       progress: Math.max(0, Math.min(100, progress)),
       progressMetadata: metadata,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     // Only update startTime if it's not already set and progress > 0
     if (progress > 0) {
       const currentJob = await db.query.jobs.findFirst({
         where: eq(jobs.id, jobId),
-        columns: { startTime: true }
+        columns: { startTime: true },
       });
 
       if (!currentJob?.startTime) {
@@ -1047,10 +1073,10 @@ async function smartUpdateJobProgress(
     await db.update(jobs).set(updateData).where(eq(jobs.id, jobId));
     state.lastDbWrite = now;
 
-    logger.debug('Job progress updated in DB', 'hashcat', {
+    logger.debug("Job progress updated in DB", "hashcat", {
       jobId,
       progress,
-      metadata: metadata ? 'included' : 'none'
+      metadata: metadata ? "included" : "none",
     });
   }
 
@@ -1066,8 +1092,8 @@ async function smartUpdateJobProgress(
           userId: true,
           startTime: true,
           endTime: true,
-          errorMessage: true
-        }
+          errorMessage: true,
+        },
       });
 
       if (currentJob) {
@@ -1080,21 +1106,21 @@ async function smartUpdateJobProgress(
           errorMessage: currentJob.errorMessage || undefined,
           metadata: {
             userId: currentJob.userId,
-            ...metadata
-          }
+            ...metadata,
+          },
         });
 
         state.lastWsBroadcast = now;
 
-        logger.debug('Job progress broadcast via WebSocket', 'hashcat', {
+        logger.debug("Job progress broadcast via WebSocket", "hashcat", {
           jobId,
-          progress
+          progress,
         });
       }
     } catch (error) {
-      logger.warn('Failed to broadcast job update', 'hashcat', {
+      logger.warn("Failed to broadcast job update", "hashcat", {
         jobId,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }
@@ -1213,7 +1239,7 @@ export async function performHashcatSecurityAudit(jobId: string): Promise<{
       recommendations.push("Consider running as non-root user");
     }
 
-    if (process.env.NODE_ENV !== "production") {
+    if (env.NODE_ENV !== "production") {
       recommendations.push("Enable production mode for enhanced security");
     }
 

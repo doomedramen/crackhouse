@@ -39,7 +39,11 @@ export default defineConfig({
   workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.CI
-    ? [["html", { outputFolder: "playwright-report", open: "never" }], ["list"], ["playwright-coverage-reporter", { format: "all" }]]
+    ? [
+        ["html", { outputFolder: "playwright-report", open: "never" }],
+        ["list"],
+        ["playwright-coverage-reporter", { format: "all" }],
+      ]
     : [
         ["html", { outputFolder: "playwright-report", open: "never" }],
         ["list"],
@@ -107,7 +111,8 @@ export default defineConfig({
       // Testcontainers are started by launch-e2e.ts before Playwright runs.
       // DATABASE_URL/REDIS_* are already in the environment.
       // Worker runs in background (&), API in foreground so Playwright can check health endpoint.
-      command: "NODE_ENV=test PORT=3001 pnpm run worker & NODE_ENV=test PORT=3001 pnpm run dev",
+      command:
+        "NODE_ENV=test PORT=3001 pnpm run worker & NODE_ENV=test PORT=3001 pnpm run dev",
       cwd: path.resolve(__dirname, "../../apps/api"),
       url: "http://localhost:3001/health",
       reuseExistingServer: !process.env.CI,

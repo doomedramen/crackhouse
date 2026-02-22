@@ -1,5 +1,9 @@
 pre-commit:
   parallel: true
   commands:
+    lint:
+      run: pnpm lint
+    format:
+      run: pnpm format:check
     typecheck:
       run: pnpm --filter web typecheck

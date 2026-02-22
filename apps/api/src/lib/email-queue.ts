@@ -3,6 +3,7 @@ import { Redis } from "ioredis";
 import { configService } from "@/services/config.service";
 import { logger } from "@/lib/logger";
 import { emailService } from "@/services/email.service";
+import { env } from "@/config/env";
 
 export interface EmailJobData {
   type:
@@ -34,8 +35,8 @@ class EmailQueue {
   async initialize(): Promise<void> {
     try {
       const connection = new Redis({
-        host: process.env.REDIS_HOST || "localhost",
-        port: parseInt(process.env.REDIS_PORT || "6379"),
+        host: env.REDIS_HOST,
+        port: parseInt(env.REDIS_PORT),
         maxRetriesPerRequest: null, // Required by BullMQ
       });
 

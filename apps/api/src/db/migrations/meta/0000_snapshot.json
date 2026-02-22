@@ -95,12 +95,8 @@
           "name": "accounts_user_id_users_id_fk",
           "tableFrom": "accounts",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -213,12 +209,8 @@
           "name": "dictionaries_user_id_users_id_fk",
           "tableFrom": "dictionaries",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -272,12 +264,8 @@
           "name": "job_results_job_id_jobs_id_fk",
           "tableFrom": "job_results",
           "tableTo": "jobs",
-          "columnsFrom": [
-            "job_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["job_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -395,12 +383,8 @@
           "name": "jobs_network_id_networks_id_fk",
           "tableFrom": "jobs",
           "tableTo": "networks",
-          "columnsFrom": [
-            "network_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["network_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -408,12 +392,8 @@
           "name": "jobs_dictionary_id_dictionaries_id_fk",
           "tableFrom": "jobs",
           "tableTo": "dictionaries",
-          "columnsFrom": [
-            "dictionary_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["dictionary_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -421,12 +401,8 @@
           "name": "jobs_user_id_users_id_fk",
           "tableFrom": "jobs",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -538,12 +514,8 @@
           "name": "networks_user_id_users_id_fk",
           "tableFrom": "networks",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -615,12 +587,8 @@
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -630,9 +598,7 @@
         "sessions_token_unique": {
           "name": "sessions_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -704,9 +670,7 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -769,48 +733,27 @@
     "public.dictionary_status": {
       "name": "dictionary_status",
       "schema": "public",
-      "values": [
-        "ready",
-        "uploading",
-        "processing",
-        "failed"
-      ]
+      "values": ["ready", "uploading", "processing", "failed"]
     },
     "public.dictionary_type": {
       "name": "dictionary_type",
       "schema": "public",
-      "values": [
-        "uploaded",
-        "generated"
-      ]
+      "values": ["uploaded", "generated"]
     },
     "public.job_status": {
       "name": "job_status",
       "schema": "public",
-      "values": [
-        "pending",
-        "running",
-        "completed",
-        "failed",
-        "cancelled"
-      ]
+      "values": ["pending", "running", "completed", "failed", "cancelled"]
     },
     "public.network_status": {
       "name": "network_status",
       "schema": "public",
-      "values": [
-        "ready",
-        "processing",
-        "failed"
-      ]
+      "values": ["ready", "processing", "failed"]
     },
     "public.role": {
       "name": "role",
       "schema": "public",
-      "values": [
-        "user",
-        "admin"
-      ]
+      "values": ["user", "admin"]
     }
   },
   "schemas": {},

@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
 
 /**
  * Dashboard Page Object
@@ -26,25 +26,27 @@ export class DashboardPage {
 
     // Header elements - use specific data-testid to avoid ambiguity
     this.uploadButton = page.locator('[data-testid="header-upload-button"]');
-    this.createJobButton = page.locator('[data-testid="header-create-job-button"]');
+    this.createJobButton = page.locator(
+      '[data-testid="header-create-job-button"]',
+    );
     // Avatar is the clickable trigger, dropdown is the menu content
     this.avatarDropdown = page.locator('[data-testid="user-menu"]');
-    this.themeToggle = page.locator('[data-testid="theme-toggle"]').or(
-      page.getByRole('button', { name: /theme|dark|light/i })
-    );
+    this.themeToggle = page
+      .locator('[data-testid="theme-toggle"]')
+      .or(page.getByRole("button", { name: /theme|dark|light/i }));
 
     // Tab navigation - using data-value attribute or text
-    this.networksTab = page.getByRole('tab', { name: /network/i });
-    this.dictionariesTab = page.getByRole('tab', { name: /dictionar/i });
-    this.jobsTab = page.getByRole('tab', { name: /job/i });
-    this.resultsTab = page.getByRole('tab', { name: /result/i });
-    this.usersTab = page.getByRole('tab', { name: /user/i });
-    this.adminTab = page.getByRole('tab', { name: /admin/i });
+    this.networksTab = page.getByRole("tab", { name: /network/i });
+    this.dictionariesTab = page.getByRole("tab", { name: /dictionar/i });
+    this.jobsTab = page.getByRole("tab", { name: /job/i });
+    this.resultsTab = page.getByRole("tab", { name: /result/i });
+    this.usersTab = page.getByRole("tab", { name: /user/i });
+    this.adminTab = page.getByRole("tab", { name: /admin/i });
   }
 
   async goto() {
-    await this.page.goto('/');
-    await this.page.waitForLoadState('networkidle');
+    await this.page.goto("/");
+    await this.page.waitForLoadState("networkidle");
   }
 
   async clickUpload() {
@@ -57,38 +59,38 @@ export class DashboardPage {
 
   async goToNetworksTab() {
     await this.networksTab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   async goToDictionariesTab() {
     await this.dictionariesTab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   async goToJobsTab() {
     await this.jobsTab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   async goToResultsTab() {
     await this.resultsTab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   async goToUsersTab() {
     await this.usersTab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   async goToAdminTab() {
     await this.adminTab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   async isTabActive(tabName: string): Promise<boolean> {
-    const tab = this.page.getByRole('tab', { name: new RegExp(tabName, 'i') });
-    const ariaSelected = await tab.getAttribute('aria-selected');
-    return ariaSelected === 'true';
+    const tab = this.page.getByRole("tab", { name: new RegExp(tabName, "i") });
+    const ariaSelected = await tab.getAttribute("aria-selected");
+    return ariaSelected === "true";
   }
 
   async getActiveTabName(): Promise<string | null> {
@@ -99,7 +101,9 @@ export class DashboardPage {
   async openUserMenu() {
     await this.avatarDropdown.click();
     // Wait for dropdown to be visible
-    await expect(this.page.locator('[data-testid="avatar-dropdown"]')).toBeVisible({ timeout: 5000 });
+    await expect(
+      this.page.locator('[data-testid="avatar-dropdown"]'),
+    ).toBeVisible({ timeout: 5000 });
   }
 
   async goToSettings() {
@@ -112,12 +116,12 @@ export class DashboardPage {
       this.page.waitForURL(/settings/, { timeout: 10000 }),
       settingsLink.click(),
     ]);
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   async signOut() {
     await this.openUserMenu();
-    const logoutButton = this.page.getByRole('menuitem', { name: /log out/i });
+    const logoutButton = this.page.getByRole("menuitem", { name: /log out/i });
     await expect(logoutButton).toBeVisible({ timeout: 5000 });
 
     // Click and wait for redirect to sign-in
@@ -125,6 +129,6 @@ export class DashboardPage {
       this.page.waitForURL(/sign-in/, { timeout: 10000 }),
       logoutButton.click(),
     ]);
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 }

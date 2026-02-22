@@ -1,4 +1,5 @@
-import { Page, BrowserContext, expect } from '@playwright/test';
+import { Page, BrowserContext, expect } from "@playwright/test";
+import { waitForDebounce, waitForAuthCookies, TEST_TIMEOUTS } from "./wait-helpers";
 
 /**
  * Auth helpers for E2E tests
@@ -7,17 +8,17 @@ import { Page, BrowserContext, expect } from '@playwright/test';
 
 // Test user credentials
 export const TEST_USER = {
-  email: 'e2e-test@example.com',
-  password: 'TestPassword123!',
-  name: 'E2E Test User',
-  role: 'user',
+  email: "e2e-test@example.com",
+  password: "TestPassword123!",
+  name: "E2E Test User",
+  role: "user",
 };
 
 export const TEST_ADMIN = {
-  email: 'e2e-admin@example.com',
-  password: 'AdminPassword123!',
-  name: 'E2E Admin User',
-  role: 'admin',
+  email: "e2e-admin@example.com",
+  password: "AdminPassword123!",
+  name: "E2E Admin User",
+  role: "admin",
 };
 
 const createdUsers = new Set<string>();
@@ -37,16 +38,16 @@ export async function ensureTestUserExists(user: {
     return;
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   try {
     // Try to create user via API
     // Include Origin header for Better Auth CORS validation
     const response = await fetch(`${apiUrl}/api/auth/sign-up/email`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Origin': 'http://localhost:3000',
+        "Content-Type": "application/json",
+        Origin: "http://localhost:3000",
       },
       body: JSON.stringify({
         email: user.email,
@@ -60,9 +61,11 @@ export async function ensureTestUserExists(user: {
       console.log(`  Created user: ${user.email}`);
 
       // Update role if needed
-      if (user.role && user.role !== 'user') {
-        const postgres = (await import('postgres')).default;
-        const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/autopwn_test';
+      if (user.role && user.role !== "user") {
+        const postgres = (await import("postgres")).default;
+        const DATABASE_URL =
+          process.env.DATABASE_URL ||
+          "postgresql://postgres:password@localhost:5432/autopwn_test";
         const sql = postgres(DATABASE_URL, { max: 1 });
         await sql`UPDATE users SET role = ${user.role} WHERE email = ${user.email}`;
         await sql.end();
@@ -83,20 +86,25 @@ export async function ensureTestUserExists(user: {
  * Login via the UI
  * Automatically ensures the test user exists before attempting login
  */
-export async function loginViaUI(page: Page, email: string, password: string, name?: string) {
+export async function loginViaUI(
+  page: Page,
+  email: string,
+  password: string,
+  name?: string,
+) {
   // Ensure user exists before trying to log in
-  const userName = name || email.split('@')[0] || 'Test User';
+  const userName = name || email.split("@")[0] || "Test User";
   await ensureTestUserExists({
     email,
     password,
     name: userName,
-    role: email === TEST_ADMIN.email ? 'admin' : 'user',
+    role: email === TEST_ADMIN.email ? "admin" : "user",
   });
 
   // Use baseURL from page or fall back to localhost
-  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  const baseUrl = process.env.BASE_URL || "http://localhost:3000";
   await page.goto(`${baseUrl}/sign-in`);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState("networkidle");
 
   // Fill in credentials
   await page.getByLabel(/email/i).fill(email);
@@ -104,19 +112,21 @@ export async function loginViaUI(page: Page, email: string, password: string, na
 
   // Submit the form and wait for redirect
   await Promise.all([
-    page.waitForURL((url) => !url.pathname.includes('/sign-in'), { timeout: 15000 }),
-    page.getByRole('button', { name: /sign in/i }).click(),
+    page.waitForURL((url) => !url.pathname.includes("/sign-in"), {
+      timeout: 15000,
+    }),
+    page.getByRole("button", { name: /sign in/i }).click(),
   ]);
 
   // Wait for page to be fully loaded
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState("networkidle");
 
-  // Wait a moment for cookies to be fully set
-  await page.waitForTimeout(500);
+  // Wait for cookies to be fully set
+  await waitForAuthCookies(page);
 
   // Verify we're not on sign-in page (login succeeded)
   const currentUrl = page.url();
-  if (currentUrl.includes('/sign-in')) {
+  if (currentUrl.includes("/sign-in")) {
     throw new Error(`Login failed for ${email} - still on sign-in page`);
   }
 }
@@ -129,13 +139,13 @@ export async function loginAndSaveState(
   context: BrowserContext,
   email: string,
   password: string,
-  storageStatePath: string
+  storageStatePath: string,
 ) {
   await loginViaUI(page, email, password);
 
   // Verify we're logged in by checking we're not on sign-in page
   const url = page.url();
-  if (url.includes('/sign-in')) {
+  if (url.includes("/sign-in")) {
     throw new Error(`Login failed for ${email} - still on sign-in page`);
   }
 
@@ -149,9 +159,11 @@ export async function loginAndSaveState(
  */
 export async function logout(page: Page) {
   // First, navigate to dashboard to ensure we're on a page with the navigation
-  await page.goto('/');
+  await page.goto("/");
   // Wait for the dashboard to be loaded - don't use networkidle as it's flaky when already idle
-  await expect(page.locator('[data-testid="dashboard"]')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('[data-testid="dashboard"]')).toBeVisible({
+    timeout: 10000,
+  });
 
   // Click on user avatar to open dropdown
   const avatar = page.locator('[data-testid="user-menu"]');
@@ -164,7 +176,7 @@ export async function logout(page: Page) {
     await expect(dropdown).toBeVisible({ timeout: 5000 });
 
     // Click the logout menu item
-    const logoutButton = page.getByRole('menuitem', { name: /log out/i });
+    const logoutButton = page.getByRole("menuitem", { name: /log out/i });
     await expect(logoutButton).toBeVisible({ timeout: 5000 });
     await logoutButton.click();
 
@@ -173,7 +185,7 @@ export async function logout(page: Page) {
   } else {
     // Fallback: clear cookies to log out
     await page.context().clearCookies();
-    await page.goto('/sign-in');
+    await page.goto("/sign-in");
     await expect(page.getByLabel(/email/i)).toBeVisible({ timeout: 5000 });
   }
 }
@@ -183,25 +195,25 @@ export async function logout(page: Page) {
  */
 export async function isAuthenticated(page: Page): Promise<boolean> {
   // Navigate to a protected page
-  await page.goto('/settings');
-  // Wait for navigation to complete - don't use networkidle as it's flaky
-  await page.waitForTimeout(500);
+  await page.goto("/settings");
+  // Wait for navigation to complete
+  await waitForDebounce(page, 500);
 
   // If we stay on settings, we're authenticated
-  return !page.url().includes('/sign-in');
+  return !page.url().includes("/sign-in");
 }
 
 /**
  * Wait for auth to be ready (cookies set, session established)
  */
-export async function waitForAuth(page: Page, timeout = 10000) {
+export async function waitForAuth(page: Page, timeout = TEST_TIMEOUTS.default) {
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeout) {
     if (await isAuthenticated(page)) {
       return true;
     }
-    await page.waitForTimeout(500);
+    await waitForDebounce(page, 500);
   }
 
   return false;

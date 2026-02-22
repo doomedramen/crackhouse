@@ -1,4 +1,8 @@
-import { startTestContainers, stopTestContainers, setTestEnvVars } from '@workspace/testcontainers';
+import {
+  startTestContainers,
+  stopTestContainers,
+  setTestEnvVars,
+} from "@workspace/testcontainers";
 
 /**
  * Vitest global setup — starts Postgres + Redis via Testcontainers,

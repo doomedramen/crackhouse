@@ -1,18 +1,18 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes';
+  if (bytes === 0) return "0 Bytes";
 
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
 export function formatDate(dateString: string): string {
@@ -39,39 +39,43 @@ export function formatDuration(start: string, end?: string): string {
 
 export function getStatusColor(status: string): string {
   switch (status) {
-    case 'completed':
-      return 'text-green-600 dark:text-green-400';
-    case 'running':
-      return 'text-blue-600 dark:text-blue-400';
-    case 'pending':
-      return 'text-yellow-600 dark:text-yellow-400';
-    case 'failed':
-      return 'text-red-600 dark:text-red-400';
-    case 'paused':
-      return 'text-orange-600 dark:text-orange-400';
-    case 'cancelled':
-      return 'text-gray-600 dark:text-gray-400';
+    case "completed":
+      return "text-green-600 dark:text-green-400";
+    case "running":
+      return "text-blue-600 dark:text-blue-400";
+    case "pending":
+      return "text-yellow-600 dark:text-yellow-400";
+    case "failed":
+      return "text-red-600 dark:text-red-400";
+    case "paused":
+      return "text-orange-600 dark:text-orange-400";
+    case "cancelled":
+      return "text-gray-600 dark:text-gray-400";
     default:
-      return 'text-gray-600 dark:text-gray-400';
+      return "text-gray-600 dark:text-gray-400";
   }
 }
 
 export function getEncryptionColor(encryption: string): string {
   switch (encryption) {
-    case 'OPEN':
-      return 'text-green-600 dark:text-green-400';
-    case 'WPA':
-    case 'WPA2':
-    case 'WPA3':
-      return 'text-yellow-600 dark:text-yellow-400';
-    case 'WEP':
-      return 'text-red-600 dark:text-red-400';
+    case "OPEN":
+      return "text-green-600 dark:text-green-400";
+    case "WPA":
+    case "WPA2":
+    case "WPA3":
+      return "text-yellow-600 dark:text-yellow-400";
+    case "WEP":
+      return "text-red-600 dark:text-red-400";
     default:
-      return 'text-gray-600 dark:text-gray-400';
+      return "text-gray-600 dark:text-gray-400";
   }
 }
 
-export function truncateMiddle(str: string, startLength = 8, endLength = 8): string {
+export function truncateMiddle(
+  str: string,
+  startLength = 8,
+  endLength = 8,
+): string {
   if (str.length <= startLength + endLength) {
     return str;
   }

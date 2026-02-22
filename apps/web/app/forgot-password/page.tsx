@@ -1,16 +1,24 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { Button } from '@workspace/ui/components/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@workspace/ui/components/card';
-import { ArrowLeft } from 'lucide-react';
+import Link from "next/link";
+import { Button } from "@workspace/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
+import { ArrowLeft } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-mono uppercase">Password Reset</CardTitle>
+          <CardTitle className="text-2xl font-mono uppercase">
+            Password Reset
+          </CardTitle>
           <CardDescription className="font-mono">
             Email-based password reset is not currently available.
           </CardDescription>

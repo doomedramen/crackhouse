@@ -290,7 +290,7 @@ dictionariesRouter.post(
         500,
       );
     }
-  }
+  },
 );
 
 // DELETE /api/dictionaries/:id - Delete a dictionary

@@ -1,4 +1,5 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
+import { waitForDebounce, waitForTableData } from "../helpers/wait-helpers";
 
 /**
  * Networks Tab Page Object
@@ -36,33 +37,43 @@ export class NetworksTabPage {
     this.content = page.locator('[data-testid="networks-content"]');
 
     // Action buttons
-    this.uploadPcapButton = page.locator('[data-testid="networks-upload-pcap-button"]');
-    this.selectAllButton = page.getByRole('button', { name: /select all/i });
-    this.clearSelectionButton = page.getByRole('button', { name: /clear selection/i });
-    this.deleteSelectedButton = page.getByRole('button', { name: /delete selected/i });
+    this.uploadPcapButton = page.locator(
+      '[data-testid="networks-upload-pcap-button"]',
+    );
+    this.selectAllButton = page.getByRole("button", { name: /select all/i });
+    this.clearSelectionButton = page.getByRole("button", {
+      name: /clear selection/i,
+    });
+    this.deleteSelectedButton = page.getByRole("button", {
+      name: /delete selected/i,
+    });
 
     // Filters
     this.searchInput = page.locator('input[placeholder*="scan networks"]');
-    this.statusFilter = page.locator('select').filter({ hasText: /all statuses/i });
-    this.encryptionFilter = page.locator('select').filter({ hasText: /all encryptions/i });
+    this.statusFilter = page
+      .locator("select")
+      .filter({ hasText: /all statuses/i });
+    this.encryptionFilter = page
+      .locator("select")
+      .filter({ hasText: /all encryptions/i });
 
     // Table
-    this.networksTable = page.locator('table');
-    this.tableRows = page.locator('table tbody tr');
+    this.networksTable = page.locator("table");
+    this.tableRows = page.locator("table tbody tr");
     this.emptyState = page.getByText(/no networks found/i);
-    this.loadingIndicator = page.locator('.animate-spin');
+    this.loadingIndicator = page.locator(".animate-spin");
   }
 
   async navigateToTab() {
     await this.tab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
     // Wait for either the table, empty state, or loading to be visible
     await expect(this.content).toBeVisible({ timeout: 10000 });
   }
 
   async isActive(): Promise<boolean> {
-    const tabClass = await this.tab.getAttribute('class');
-    return tabClass?.includes('border-primary') ?? false;
+    const tabClass = await this.tab.getAttribute("class");
+    return tabClass?.includes("border-primary") ?? false;
   }
 
   async waitForLoaded() {
@@ -72,17 +83,19 @@ export class NetworksTabPage {
 
   async searchNetworks(query: string) {
     await this.searchInput.fill(query);
-    await this.page.waitForTimeout(300); // Debounce
+    await waitForDebounce(this.page);
   }
 
-  async filterByStatus(status: 'all' | 'ready' | 'processing' | 'failed') {
+  async filterByStatus(status: "all" | "ready" | "processing" | "failed") {
     await this.statusFilter.selectOption(status);
-    await this.page.waitForTimeout(300);
+    await waitForDebounce(this.page);
   }
 
-  async filterByEncryption(encryption: 'all' | 'OPEN' | 'WPA' | 'WPA2' | 'WPA3' | 'WEP') {
+  async filterByEncryption(
+    encryption: "all" | "OPEN" | "WPA" | "WPA2" | "WPA3" | "WEP",
+  ) {
     await this.encryptionFilter.selectOption(encryption);
-    await this.page.waitForTimeout(300);
+    await waitForDebounce(this.page);
   }
 
   async getNetworkCount(): Promise<number> {

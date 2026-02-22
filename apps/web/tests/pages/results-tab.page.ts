@@ -1,4 +1,5 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
+import { waitForDebounce } from "../helpers/wait-helpers";
 
 /**
  * Results Tab Page Object
@@ -44,34 +45,40 @@ export class ResultsTabPage {
     this.content = page.locator('[data-testid="results-content"]');
 
     // Stats cards - use text selectors within the content area
-    this.totalResultsLabel = this.content.getByText('Total Results');
-    this.crackedNetworksLabel = this.content.getByText('Cracked Networks');
-    this.resultsByTypeLabel = this.content.getByText('Results by Type');
+    this.totalResultsLabel = this.content.getByText("Total Results");
+    this.crackedNetworksLabel = this.content.getByText("Cracked Networks");
+    this.resultsByTypeLabel = this.content.getByText("Results by Type");
 
     // Filter controls
-    this.typeFilter = this.content.locator('select');
-    this.crackedOnlyButton = this.content.getByText('Cracked Only');
-    this.exportCsvButton = this.content.getByRole('button', { name: /export csv/i });
+    this.typeFilter = this.content.locator("select");
+    this.crackedOnlyButton = this.content.getByText("Cracked Only");
+    this.exportCsvButton = this.content.getByRole("button", {
+      name: /export csv/i,
+    });
 
     // Table
-    this.resultsTable = this.content.locator('table');
-    this.tableRows = this.content.locator('table tbody tr');
+    this.resultsTable = this.content.locator("table");
+    this.tableRows = this.content.locator("table tbody tr");
 
     // Empty state
     this.emptyState = this.content.getByText(/no results found/i);
-    this.emptyStateMessage = this.content.getByText(/run cracking jobs to generate results/i);
+    this.emptyStateMessage = this.content.getByText(
+      /run cracking jobs to generate results/i,
+    );
 
     // Pagination
-    this.previousButton = this.content.getByRole('button', { name: /previous/i });
-    this.nextButton = this.content.getByRole('button', { name: /next/i });
+    this.previousButton = this.content.getByRole("button", {
+      name: /previous/i,
+    });
+    this.nextButton = this.content.getByRole("button", { name: /next/i });
 
     // Loading
-    this.loadingIndicator = this.content.locator('.animate-spin');
+    this.loadingIndicator = this.content.locator(".animate-spin");
   }
 
   async navigateToTab() {
     await this.tab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
     await expect(this.content).toBeVisible({ timeout: 10000 });
   }
 
@@ -95,8 +102,8 @@ export class ResultsTabPage {
     await this.crackedOnlyButton.click();
   }
 
-  async filterByType(type: '' | 'password' | 'handshake' | 'error') {
+  async filterByType(type: "" | "password" | "handshake" | "error") {
     await this.typeFilter.selectOption(type);
-    await this.page.waitForTimeout(300);
+    await waitForDebounce(this.page);
   }
 }

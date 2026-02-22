@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
-import "../config/env";
+import { env } from "@/config/env";
 
 // Lazy database connections to allow environment to be configured before connecting
 let migrationClientInstance: any = null;
@@ -11,7 +11,7 @@ let migrationDbInstance: any = null;
 
 function getMigrationClient() {
   if (!migrationClientInstance) {
-    migrationClientInstance = postgres(process.env.DATABASE_URL!, {
+    migrationClientInstance = postgres(env.DATABASE_URL, {
       max: 1,
       connect_timeout: 10, // 10 seconds timeout
       connection: {
@@ -24,7 +24,7 @@ function getMigrationClient() {
 
 function getQueryClient() {
   if (!queryClientInstance) {
-    queryClientInstance = postgres(process.env.DATABASE_URL!, {
+    queryClientInstance = postgres(env.DATABASE_URL, {
       connect_timeout: 10, // 10 seconds timeout
       connection: {
         application_name: "crackhouse-app",

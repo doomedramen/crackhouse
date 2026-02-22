@@ -1,15 +1,15 @@
-import { Hono } from 'hono'
-import type { User } from 'better-auth/types'
-import type { HonoAuthContext } from '../../src/types/auth'
-import { globalErrorHandler } from '../../src/lib/error-handler'
+import { Hono } from "hono";
+import type { User } from "better-auth/types";
+import type { HonoAuthContext } from "../../src/types/auth";
+import { globalErrorHandler } from "../../src/lib/error-handler";
 
 /**
  * Response type for API requests
  */
 export interface ApiResponse<T = any> {
-  status: number
-  data: T
-  headers: Headers
+  status: number;
+  data: T;
+  headers: Headers;
 }
 
 /**
@@ -18,45 +18,45 @@ export interface ApiResponse<T = any> {
  */
 export function createTestAppWithAuth(
   routes: any,
-  testUser: { id: string; email: string; name: string; role: string }
+  testUser: { id: string; email: string; name: string; role: string },
 ): Hono {
-  const app = new Hono()
+  const app = new Hono();
 
   // Mock authentication middleware - sets user context before routes execute
-  app.use('*', async (c, next) => {
+  app.use("*", async (c, next) => {
     // Set the user object that authenticate middleware expects
-    c.set('user', {
+    c.set("user", {
       id: testUser.id,
       email: testUser.email,
       name: testUser.name,
       role: testUser.role,
-    } as User)
+    } as User);
 
     // Set the auth context that routes expect
-    c.set('userId', testUser.id)
-    c.set('userRole', testUser.role)
-    c.set('userEmail', testUser.email)
+    c.set("userId", testUser.id);
+    c.set("userRole", testUser.role);
+    c.set("userEmail", testUser.email);
 
-    await next()
-  })
+    await next();
+  });
 
   // Mount the routes
-  app.route('/', routes)
+  app.route("/", routes);
 
   // Add global error handler at the end
-  app.onError(globalErrorHandler)
+  app.onError(globalErrorHandler);
 
-  return app
+  return app;
 }
 
 /**
  * Creates a test app without authentication (for testing auth failures)
  */
 export function createTestAppWithoutAuth(routes: any): Hono {
-  const app = new Hono()
-  app.route('/', routes)
-  app.onError(globalErrorHandler)
-  return app
+  const app = new Hono();
+  app.route("/", routes);
+  app.onError(globalErrorHandler);
+  return app;
 }
 
 /**
@@ -65,17 +65,17 @@ export function createTestAppWithoutAuth(routes: any): Hono {
 export async function getRequest<T = any>(
   app: Hono,
   path: string,
-  headers: Record<string, string> = {}
+  headers: Record<string, string> = {},
 ): Promise<ApiResponse<T>> {
   const response = await app.request(path, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...headers,
     },
-  })
+  });
 
-  return parseResponse<T>(response)
+  return parseResponse<T>(response);
 }
 
 /**
@@ -85,18 +85,18 @@ export async function postRequest<T = any>(
   app: Hono,
   path: string,
   body: any,
-  headers: Record<string, string> = {}
+  headers: Record<string, string> = {},
 ): Promise<ApiResponse<T>> {
   const response = await app.request(path, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...headers,
     },
     body: JSON.stringify(body),
-  })
+  });
 
-  return parseResponse<T>(response)
+  return parseResponse<T>(response);
 }
 
 /**
@@ -106,18 +106,18 @@ export async function putRequest<T = any>(
   app: Hono,
   path: string,
   body: any,
-  headers: Record<string, string> = {}
+  headers: Record<string, string> = {},
 ): Promise<ApiResponse<T>> {
   const response = await app.request(path, {
-    method: 'PUT',
+    method: "PUT",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...headers,
     },
     body: JSON.stringify(body),
-  })
+  });
 
-  return parseResponse<T>(response)
+  return parseResponse<T>(response);
 }
 
 /**
@@ -126,17 +126,17 @@ export async function putRequest<T = any>(
 export async function deleteRequest<T = any>(
   app: Hono,
   path: string,
-  headers: Record<string, string> = {}
+  headers: Record<string, string> = {},
 ): Promise<ApiResponse<T>> {
   const response = await app.request(path, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...headers,
     },
-  })
+  });
 
-  return parseResponse<T>(response)
+  return parseResponse<T>(response);
 }
 
 /**
@@ -146,39 +146,39 @@ export async function patchRequest<T = any>(
   app: Hono,
   path: string,
   body: any,
-  headers: Record<string, string> = {}
+  headers: Record<string, string> = {},
 ): Promise<ApiResponse<T>> {
   const response = await app.request(path, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...headers,
     },
     body: JSON.stringify(body),
-  })
+  });
 
-  return parseResponse<T>(response)
+  return parseResponse<T>(response);
 }
 
 /**
  * Parses the response from a Hono app
  */
 async function parseResponse<T>(response: Response): Promise<ApiResponse<T>> {
-  const text = await response.text()
-  let data: T
+  const text = await response.text();
+  let data: T;
 
   try {
-    data = JSON.parse(text)
+    data = JSON.parse(text);
   } catch {
     // If not JSON, return raw text
-    data = text as T
+    data = text as T;
   }
 
   return {
     status: response.status,
     data,
     headers: response.headers,
-  }
+  };
 }
 
 /**
@@ -188,35 +188,35 @@ export async function postFormData<T = any>(
   app: Hono,
   path: string,
   formData: FormData,
-  headers: Record<string, string> = {}
+  headers: Record<string, string> = {},
 ): Promise<ApiResponse<T>> {
   const response = await app.request(path, {
-    method: 'POST',
+    method: "POST",
     headers: {
       // Don't set Content-Type for FormData - let the browser set it with boundary
       ...headers,
     },
     body: formData,
-  })
+  });
 
-  return parseResponse<T>(response)
+  return parseResponse<T>(response);
 }
 
 /**
  * Creates a test user object for mocking authentication
  */
 export function createTestUserObject(user: {
-  id: string
-  email: string
-  name?: string
-  role?: string
+  id: string;
+  email: string;
+  name?: string;
+  role?: string;
 }) {
   return {
     id: user.id,
     email: user.email,
-    name: user.name || 'Test User',
-    role: user.role || 'user',
-  }
+    name: user.name || "Test User",
+    role: user.role || "user",
+  };
 }
 
 /**
@@ -225,9 +225,9 @@ export function createTestUserObject(user: {
 export function createMockFile(
   name: string,
   content: string,
-  mimeType: string = 'text/plain'
+  mimeType: string = "text/plain",
 ): File {
-  const encoder = new TextEncoder()
-  const bytes = encoder.encode(content)
-  return new File([bytes], name, { type: mimeType })
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(content);
+  return new File([bytes], name, { type: mimeType });
 }

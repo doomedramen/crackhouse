@@ -1,11 +1,11 @@
-import { Hono } from 'hono'
-import { auth } from '@/lib/auth'
+import { Hono } from "hono";
+import { auth } from "@/lib/auth";
 
-const authRoutes = new Hono()
+const authRoutes = new Hono();
 
 // Mount Better Auth handler with the recommended pattern from documentation
-authRoutes.on(['POST', 'GET'], '/*', (c) => {
-  return auth.handler(c.req.raw)
-})
+authRoutes.on(["POST", "GET"], "/*", (c) => {
+  return auth.handler(c.req.raw);
+});
 
-export { authRoutes }
+export { authRoutes };

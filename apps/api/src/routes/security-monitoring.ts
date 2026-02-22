@@ -1,35 +1,43 @@
-import { Hono } from 'hono'
-import { zValidator } from '@hono/zod-validator'
-import { z } from 'zod'
-import { getSecurityMetrics, getSecurityAlerts, updateAlertStatus, SecurityEventType } from '../lib/monitoring'
-import { requireRole } from '../middleware/auth'
+import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
+import {
+  getSecurityMetrics,
+  getSecurityAlerts,
+  updateAlertStatus,
+  SecurityEventType,
+} from "../lib/monitoring";
+import { requireRole } from "../middleware/auth";
+import { logger } from "@/lib/logger";
 
-import { authenticate } from '../middleware/auth'
+import { authenticate } from "../middleware/auth";
 
-const securityRoutes = new Hono()
+const securityRoutes = new Hono();
 
 // Apply authentication middleware to all routes
-securityRoutes.use('*', authenticate)
+securityRoutes.use("*", authenticate);
 
 // Schema for updating alert status
 const updateAlertSchema = z.object({
-  status: z.enum(['open', 'investigating', 'resolved', 'false_positive'])
-})
+  status: z.enum(["open", "investigating", "resolved", "false_positive"]),
+});
 
 // Schema for filtering alerts
 const alertsFilterSchema = z.object({
-  status: z.enum(['open', 'investigating', 'resolved', 'false_positive']).optional(),
-  severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
-  limit: z.coerce.number().min(1).max(100).optional()
-})
+  status: z
+    .enum(["open", "investigating", "resolved", "false_positive"])
+    .optional(),
+  severity: z.enum(["low", "medium", "high", "critical"]).optional(),
+  limit: z.coerce.number().min(1).max(100).optional(),
+});
 
 /**
  * GET /security/metrics
  * Get security metrics and statistics
  */
-securityRoutes.get('/metrics', (c) => {
+securityRoutes.get("/metrics", (c) => {
   try {
-    const metrics = getSecurityMetrics()
+    const metrics = getSecurityMetrics();
 
     return c.json({
       success: true,
@@ -38,100 +46,113 @@ securityRoutes.get('/metrics', (c) => {
           totalEvents: metrics.totalEvents,
           criticalEvents: metrics.criticalEvents,
           openAlerts: metrics.alertsByStatus.open || 0,
-          investigatingAlerts: metrics.alertsByStatus.investigating || 0
+          investigatingAlerts: metrics.alertsByStatus.investigating || 0,
         },
         eventsByType: metrics.eventsByType,
         eventsBySeverity: metrics.eventsBySeverity,
         topOffenders: metrics.topOffenders,
         recentEvents: metrics.recentEvents.slice(0, 20), // Limit to last 20 events
         alertsByStatus: metrics.alertsByStatus,
-        timestamp: new Date().toISOString()
-      }
-    })
+        timestamp: new Date().toISOString(),
+      },
+    });
   } catch (error) {
-    console.error('Error fetching security metrics:', error)
-    return c.json({
-      success: false,
-      error: 'Failed to fetch security metrics'
-    }, 500)
+    logger.error("Error fetching security metrics", "security-monitoring", {
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
+    return c.json(
+      {
+        success: false,
+        error: "Failed to fetch security metrics",
+      },
+      500,
+    );
   }
-})
+});
 
 /**
  * GET /security/alerts
  * Get security alerts with optional filtering
  */
-securityRoutes.get('/alerts',
-  zValidator('query', alertsFilterSchema),
-  (c) => {
-    try {
-      const filters = c.req.valid('query')
-      const alerts = getSecurityAlerts(filters)
+securityRoutes.get("/alerts", zValidator("query", alertsFilterSchema), (c) => {
+  try {
+    const filters = c.req.valid("query");
+    const alerts = getSecurityAlerts(filters);
 
-      return c.json({
-        success: true,
-        data: {
-          alerts,
-          total: alerts.length,
-          filters: filters,
-          timestamp: new Date().toISOString()
-        }
-      })
-    } catch (error) {
-      console.error('Error fetching security alerts:', error)
-      return c.json({
+    return c.json({
+      success: true,
+      data: {
+        alerts,
+        total: alerts.length,
+        filters: filters,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    logger.error("Error fetching security alerts", "security-monitoring", {
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
+    return c.json(
+      {
         success: false,
-        error: 'Failed to fetch security alerts'
-      }, 500)
-    }
+        error: "Failed to fetch security alerts",
+      },
+      500,
+    );
   }
-)
+});
 
 /**
  * PUT /security/alerts/:alertId
  * Update security alert status
  */
-securityRoutes.put('/alerts/:alertId',
-  zValidator('json', updateAlertSchema),
+securityRoutes.put(
+  "/alerts/:alertId",
+  zValidator("json", updateAlertSchema),
   (c) => {
     try {
-      const alertId = c.req.param('alertId')
-      const { status } = c.req.valid('json')
+      const alertId = c.req.param("alertId");
+      const { status } = c.req.valid("json");
 
-      updateAlertStatus(alertId, status)
+      updateAlertStatus(alertId, status);
 
       return c.json({
         success: true,
         message: `Alert ${alertId} status updated to ${status}`,
-        timestamp: new Date().toISOString()
-      })
+        timestamp: new Date().toISOString(),
+      });
     } catch (error) {
-      console.error('Error updating alert status:', error)
-      return c.json({
-        success: false,
-        error: 'Failed to update alert status'
-      }, 500)
+      logger.error("Error updating alert status", "security-monitoring", {
+        error: error instanceof Error ? error : new Error(String(error)),
+      });
+      return c.json(
+        {
+          success: false,
+          error: "Failed to update alert status",
+        },
+        500,
+      );
     }
-  }
-)
+  },
+);
 
 /**
  * GET /security/dashboard
  * Get security dashboard data (summary view)
  */
-securityRoutes.get('/dashboard', (c) => {
+securityRoutes.get("/dashboard", (c) => {
   try {
-    const metrics = getSecurityMetrics()
+    const metrics = getSecurityMetrics();
     const criticalAlerts = getSecurityAlerts({
-      severity: 'critical',
-      status: 'open',
-      limit: 5
-    })
+      severity: "critical",
+      status: "open",
+      limit: 5,
+    });
     const highAlerts = getSecurityAlerts({
-      severity: 'high',
-      status: 'open',
-      limit: 5
-    })
+      severity: "high",
+      status: "open",
+      limit: 5,
+    });
 
     return c.json({
       success: true,
@@ -140,31 +161,36 @@ securityRoutes.get('/dashboard', (c) => {
           totalEvents: metrics.totalEvents,
           criticalEvents: metrics.criticalEvents,
           openAlerts: metrics.alertsByStatus.open || 0,
-          topOffender: metrics.topOffenders[0] || null
+          topOffender: metrics.topOffenders[0] || null,
         },
         criticalAlerts,
         highAlerts,
         eventsBySeverity: metrics.eventsBySeverity,
         topOffenders: metrics.topOffenders.slice(0, 5),
-        timestamp: new Date().toISOString()
-      }
-    })
+        timestamp: new Date().toISOString(),
+      },
+    });
   } catch (error) {
-    console.error('Error fetching security dashboard:', error)
-    return c.json({
-      success: false,
-      error: 'Failed to fetch security dashboard'
-    }, 500)
+    logger.error("Error fetching security dashboard", "security-monitoring", {
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
+    return c.json(
+      {
+        success: false,
+        error: "Failed to fetch security dashboard",
+      },
+      500,
+    );
   }
-})
+});
 
 /**
  * GET /security/events/summary
  * Get security events summary by type and severity
  */
-securityRoutes.get('/events/summary', (c) => {
+securityRoutes.get("/events/summary", (c) => {
   try {
-    const metrics = getSecurityMetrics()
+    const metrics = getSecurityMetrics();
 
     // Group events by category
     const eventCategories = {
@@ -173,46 +199,46 @@ securityRoutes.get('/events/summary', (c) => {
         SecurityEventType.LOGIN_FAILURE,
         SecurityEventType.LOGOUT,
         SecurityEventType.SUSPICIOUS_LOGIN,
-        SecurityEventType.BRUTE_FORCE_DETECTED
+        SecurityEventType.BRUTE_FORCE_DETECTED,
       ],
       authorization: [
         SecurityEventType.UNAUTHORIZED_ACCESS,
         SecurityEventType.FORBIDDEN_ACCESS,
-        SecurityEventType.PRIVILEGE_ESCALATION
+        SecurityEventType.PRIVILEGE_ESCALATION,
       ],
       rateLimiting: [
         SecurityEventType.RATE_LIMIT_EXCEEDED,
-        SecurityEventType.SUSPICIOUS_REQUEST_PATTERN
+        SecurityEventType.SUSPICIOUS_REQUEST_PATTERN,
       ],
       fileSecurity: [
         SecurityEventType.MALICIOUS_FILE_DETECTED,
         SecurityEventType.SUSPICIOUS_FILE_UPLOAD,
-        SecurityEventType.FILE_QUOTA_EXCEEDED
+        SecurityEventType.FILE_QUOTA_EXCEEDED,
       ],
       dataSecurity: [
         SecurityEventType.DATA_ACCESS_PATTERN,
         SecurityEventType.SENSITIVE_DATA_ACCESS,
-        SecurityEventType.DATA_EXFILTRATION_ATTEMPT
+        SecurityEventType.DATA_EXFILTRATION_ATTEMPT,
       ],
       system: [
         SecurityEventType.SYSTEM_ERROR,
         SecurityEventType.SECURITY_MISCONFIGURATION,
-        SecurityEventType.ANOMALOUS_BEHAVIOR
+        SecurityEventType.ANOMALOUS_BEHAVIOR,
       ],
       network: [
         SecurityEventType.SUSPICIOUS_IP,
         SecurityEventType.MALICIOUS_REQUEST,
         SecurityEventType.INJECTION_ATTEMPT,
-        SecurityEventType.XSS_ATTEMPT
-      ]
-    }
+        SecurityEventType.XSS_ATTEMPT,
+      ],
+    };
 
-    const eventsByCategory: Record<string, number> = {}
+    const eventsByCategory: Record<string, number> = {};
     Object.entries(eventCategories).forEach(([category, eventTypes]) => {
       eventsByCategory[category] = eventTypes.reduce((total, eventType) => {
-        return total + (metrics.eventsByType[eventType] || 0)
-      }, 0)
-    })
+        return total + (metrics.eventsByType[eventType] || 0);
+      }, 0);
+    });
 
     return c.json({
       success: true,
@@ -221,39 +247,44 @@ securityRoutes.get('/events/summary', (c) => {
         eventsBySeverity: metrics.eventsBySeverity,
         totalEvents: metrics.totalEvents,
         criticalEvents: metrics.criticalEvents,
-        timestamp: new Date().toISOString()
-      }
-    })
+        timestamp: new Date().toISOString(),
+      },
+    });
   } catch (error) {
-    console.error('Error fetching events summary:', error)
-    return c.json({
-      success: false,
-      error: 'Failed to fetch events summary'
-    }, 500)
+    logger.error("Error fetching events summary", "security-monitoring", {
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
+    return c.json(
+      {
+        success: false,
+        error: "Failed to fetch events summary",
+      },
+      500,
+    );
   }
-})
+});
 
 /**
  * GET /security/health
  * Get security monitoring health status
  */
-securityRoutes.get('/health', (c) => {
+securityRoutes.get("/health", (c) => {
   try {
-    const metrics = getSecurityMetrics()
-    const openAlerts = metrics.alertsByStatus.open || 0
+    const metrics = getSecurityMetrics();
+    const openAlerts = metrics.alertsByStatus.open || 0;
     const criticalAlerts = getSecurityAlerts({
-      severity: 'critical',
-      status: 'open'
-    }).length
+      severity: "critical",
+      status: "open",
+    }).length;
 
     // Determine health status
-    let status = 'healthy'
+    let status = "healthy";
     if (criticalAlerts > 0) {
-      status = 'critical'
+      status = "critical";
     } else if (openAlerts > 10) {
-      status = 'warning'
+      status = "warning";
     } else if (openAlerts > 0) {
-      status = 'degraded'
+      status = "degraded";
     }
 
     return c.json({
@@ -264,18 +295,23 @@ securityRoutes.get('/health', (c) => {
           totalEvents: metrics.totalEvents,
           openAlerts,
           criticalAlerts,
-          topOffenders: metrics.topOffenders.length
+          topOffenders: metrics.topOffenders.length,
         },
-        timestamp: new Date().toISOString()
-      }
-    })
+        timestamp: new Date().toISOString(),
+      },
+    });
   } catch (error) {
-    console.error('Error fetching security health:', error)
-    return c.json({
-      success: false,
-      error: 'Failed to fetch security health status'
-    }, 500)
+    logger.error("Error fetching security health", "security-monitoring", {
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
+    return c.json(
+      {
+        success: false,
+        error: "Failed to fetch security health status",
+      },
+      500,
+    );
   }
-})
+});
 
-export { securityRoutes }
+export { securityRoutes };

@@ -1,5 +1,6 @@
-import { Page, Locator, expect } from '@playwright/test';
-import * as path from 'path';
+import { Page, Locator, expect } from "@playwright/test";
+import * as path from "path";
+import { waitForDebounce, TEST_TIMEOUTS } from "../helpers/wait-helpers";
 
 /**
  * Upload Modal Page Object
@@ -36,20 +37,30 @@ export class UploadModalPage {
     this.closeButton = page.locator('[data-testid="upload-modal-close"]');
 
     // Tabs within the modal - use button with text
-    this.pcapTab = this.modal.locator('button[role="tab"]').filter({ hasText: /captures/i });
-    this.dictionaryTab = this.modal.locator('button[role="tab"]').filter({ hasText: /dictionaries/i });
+    this.pcapTab = this.modal
+      .locator('button[role="tab"]')
+      .filter({ hasText: /captures/i });
+    this.dictionaryTab = this.modal
+      .locator('button[role="tab"]')
+      .filter({ hasText: /dictionaries/i });
 
     // Upload elements
-    this.dropzone = this.modal.locator('.border-dashed');
+    this.dropzone = this.modal.locator(".border-dashed");
     this.fileInput = this.modal.locator('input[type="file"]');
 
     // Action buttons
-    this.uploadButton = this.modal.getByRole('button', { name: /upload/i }).last();
-    this.cancelButton = this.modal.getByRole('button', { name: /cancel/i });
+    this.uploadButton = this.modal
+      .getByRole("button", { name: /upload/i })
+      .last();
+    this.cancelButton = this.modal.getByRole("button", { name: /cancel/i });
 
     // Success messages
-    this.pcapSuccessMessage = page.locator('[data-testid="upload-success-pcap"]');
-    this.dictionarySuccessMessage = page.locator('[data-testid="upload-success-dictionary"]');
+    this.pcapSuccessMessage = page.locator(
+      '[data-testid="upload-success-pcap"]',
+    );
+    this.dictionarySuccessMessage = page.locator(
+      '[data-testid="upload-success-dictionary"]',
+    );
   }
 
   async isVisible(): Promise<boolean> {
@@ -95,15 +106,17 @@ export class UploadModalPage {
    */
   async submitUpload() {
     await this.uploadButton.click();
-    // Wait for upload to complete or error
-    await this.page.waitForTimeout(2000);
+    // Wait for upload to complete or error - uploads can take time
+    await waitForDebounce(this.page, TEST_TIMEOUTS.default);
   }
 
   /**
    * Get the count of files added
    */
   async getFileCount(): Promise<number> {
-    const fileItems = this.modal.locator('.uppy-Dashboard-Item, [data-testid="file-item"]');
+    const fileItems = this.modal.locator(
+      '.uppy-Dashboard-Item, [data-testid="file-item"]',
+    );
     return fileItems.count();
   }
 
@@ -119,7 +132,9 @@ export class UploadModalPage {
    * Get error message if upload failed
    */
   async getErrorMessage(): Promise<string | null> {
-    const errorElement = this.modal.locator('.uppy-Informer-message, [data-testid="error-message"]');
+    const errorElement = this.modal.locator(
+      '.uppy-Informer-message, [data-testid="error-message"]',
+    );
     if (await errorElement.isVisible()) {
       return errorElement.textContent();
     }

@@ -5,49 +5,49 @@
  * Uses validated environment variables from env.ts with sensible defaults.
  */
 
-import { env } from './env'
+import { env } from "./env";
 
 export const config = {
   /**
    * API server URL
    * Used for all API requests from the frontend
    */
-  apiUrl: env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+  apiUrl: env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
 
   /**
    * WebSocket server URL
    * Used for real-time updates
    */
-  wsUrl: env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3002',
+  wsUrl: env.NEXT_PUBLIC_WS_URL || "ws://localhost:3002",
 
   /**
    * Application environment
    */
   get env() {
-    return process.env.NODE_ENV || 'development'
+    return process.env.NODE_ENV || "development";
   },
 
   /**
    * Whether we're in production
    */
   get isProduction() {
-    return this.env === 'production'
+    return this.env === "production";
   },
 
   /**
    * Whether we're in development
    */
   get isDevelopment() {
-    return this.env === 'development'
+    return this.env === "development";
   },
 
   /**
    * Whether we're in test mode
    */
   get isTest() {
-    return this.env === 'test'
+    return this.env === "test";
   },
-} as const
+} as const;
 
 /**
  * Auth configuration
@@ -62,10 +62,10 @@ export const authConfig = {
   get baseURL() {
     // For auth, we use the frontend URL (not the API URL) since Next.js proxies
     // the auth requests to the backend
-    const frontendUrl = env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'
-    return frontendUrl.replace(/\/$/, '') + '/api/auth'
+    const frontendUrl = env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000";
+    return frontendUrl.replace(/\/$/, "") + "/api/auth";
   },
-} as const
+} as const;
 
 /**
  * Timeouts for frontend operations (in milliseconds)
@@ -85,7 +85,7 @@ export const timeouts = {
 
   /** WebSocket reconnect delay: 5 seconds */
   wsReconnect: 5_000,
-} as const
+} as const;
 
 /**
  * Query client defaults for React Query
@@ -114,4 +114,4 @@ export const queryDefaults = {
 
   /** Health check stale time: 30 seconds */
   healthStaleTime: 30_000,
-} as const
+} as const;

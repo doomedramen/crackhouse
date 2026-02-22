@@ -1,4 +1,8 @@
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import {
+  GenericContainer,
+  type StartedTestContainer,
+  Wait,
+} from "testcontainers";
 
 export interface TestContainers {
   postgres: StartedTestContainer;
@@ -18,21 +22,23 @@ export async function startTestContainers(): Promise<{
   containers: TestContainers;
   ports: TestPorts;
 }> {
-  console.log('Starting test containers (Postgres + Redis)...');
+  console.log("Starting test containers (Postgres + Redis)...");
 
   const [postgres, redis] = await Promise.all([
-    new GenericContainer('postgres:16-alpine')
+    new GenericContainer("postgres:16-alpine")
       .withEnvironment({
-        POSTGRES_USER: 'postgres',
-        POSTGRES_PASSWORD: 'password',
-        POSTGRES_DB: 'crackhouse_test',
+        POSTGRES_USER: "postgres",
+        POSTGRES_PASSWORD: "password",
+        POSTGRES_DB: "crackhouse_test",
       })
       .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
+      .withWaitStrategy(
+        Wait.forLogMessage(/database system is ready to accept connections/, 2),
+      )
       .withStartupTimeout(60_000)
       .start(),
 
-    new GenericContainer('redis:7-alpine')
+    new GenericContainer("redis:7-alpine")
       .withExposedPorts(6379)
       .withWaitStrategy(Wait.forLogMessage(/Ready to accept connections/))
       .withStartupTimeout(30_000)
@@ -53,13 +59,12 @@ export async function startTestContainers(): Promise<{
 /**
  * Stop both test containers.
  */
-export async function stopTestContainers(containers: TestContainers): Promise<void> {
-  console.log('Stopping test containers...');
-  await Promise.all([
-    containers.postgres.stop(),
-    containers.redis.stop(),
-  ]);
-  console.log('Test containers stopped.');
+export async function stopTestContainers(
+  containers: TestContainers,
+): Promise<void> {
+  console.log("Stopping test containers...");
+  await Promise.all([containers.postgres.stop(), containers.redis.stop()]);
+  console.log("Test containers stopped.");
 }
 
 /**
@@ -72,6 +77,6 @@ export function setTestEnvVars(ports: TestPorts): void {
 
   process.env.DATABASE_URL = dbUrl;
   process.env.REDIS_URL = redisUrl;
-  process.env.REDIS_HOST = 'localhost';
+  process.env.REDIS_HOST = "localhost";
   process.env.REDIS_PORT = String(ports.redisPort);
 }

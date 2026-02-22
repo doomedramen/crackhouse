@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,25 +8,25 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@workspace/ui/components/dialog';
-import { Button } from '@workspace/ui/components/button';
-import { Input } from '@workspace/ui/components/input';
-import { Label } from '@workspace/ui/components/label';
+} from "@workspace/ui/components/dialog";
+import { Button } from "@workspace/ui/components/button";
+import { Input } from "@workspace/ui/components/input";
+import { Label } from "@workspace/ui/components/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@workspace/ui/components/select';
-import { Textarea } from '@workspace/ui/components/textarea';
-import { Switch } from '@workspace/ui/components/switch';
-import { Separator } from '@workspace/ui/components/separator';
+} from "@workspace/ui/components/select";
+import { Textarea } from "@workspace/ui/components/textarea";
+import { Switch } from "@workspace/ui/components/switch";
+import { Separator } from "@workspace/ui/components/separator";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@workspace/ui/components/collapsible';
+} from "@workspace/ui/components/collapsible";
 import {
   Settings,
   ChevronDown,
@@ -36,8 +36,8 @@ import {
   AlertCircle,
   Database,
   Archive,
-  Split
-} from 'lucide-react';
+  Split,
+} from "lucide-react";
 
 interface DictionaryGeneratorModalProps {
   children: React.ReactNode;
@@ -46,7 +46,7 @@ interface DictionaryGeneratorModalProps {
 interface GeneratorForm {
   minLen: string;
   maxLen: string;
-  charsetType: 'predefined' | 'custom';
+  charsetType: "predefined" | "custom";
   charsetName: string;
   customCharset: string;
   pattern: string;
@@ -55,7 +55,7 @@ interface GeneratorForm {
   wordlist: string;
   usePadding: boolean;
   paddingChars: string;
-  paddingPosition: 'prefix' | 'suffix' | 'both';
+  paddingPosition: "prefix" | "suffix" | "both";
   paddingCount: string;
   useLeetSpeak: boolean;
   startString: string;
@@ -63,96 +63,107 @@ interface GeneratorForm {
   maxDuplicates: string;
   useMaxDuplicates: boolean;
   outputFilename: string;
-  splitBy: 'none' | 'lines' | 'size';
+  splitBy: "none" | "lines" | "size";
   splitLines: string;
   splitSize: string;
-  compression: 'none' | 'gzip' | 'bzip2' | 'lzma' | '7z';
+  compression: "none" | "gzip" | "bzip2" | "lzma" | "7z";
   maxMemory: string;
   useMaxMemory: boolean;
 }
 
 const PREDEFINED_CHARSETS = {
-  'lowercase': 'abcdefghijklmnopqrstuvwxyz',
-  'uppercase': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-  'numeric': '0123456789',
-  'symbols': '!@#$%^&*()-_+=~`[]{}|:;"\'<>,./?',
-  'alphanumeric': 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-  'all': 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_+=~`[]{}|:;"\'<>,./?'
+  lowercase: "abcdefghijklmnopqrstuvwxyz",
+  uppercase: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  numeric: "0123456789",
+  symbols: "!@#$%^&*()-_+=~`[]{}|:;\"'<>,./?",
+  alphanumeric:
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+  all: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_+=~`[]{}|:;\"'<>,./?",
 };
 
-export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalProps) {
+export function DictionaryGeneratorModal({
+  children,
+}: DictionaryGeneratorModalProps) {
   const [open, setOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [form, setForm] = useState<GeneratorForm>({
-    minLen: '8',
-    maxLen: '63',
-    charsetType: 'predefined',
-    charsetName: 'lowercase',
-    customCharset: '',
-    pattern: '',
+    minLen: "8",
+    maxLen: "63",
+    charsetType: "predefined",
+    charsetName: "lowercase",
+    customCharset: "",
+    pattern: "",
     usePattern: false,
     useWordlist: false,
-    wordlist: '',
+    wordlist: "",
     usePadding: false,
-    paddingChars: '!@#$%^&*',
-    paddingPosition: 'both',
-    paddingCount: '1',
+    paddingChars: "!@#$%^&*",
+    paddingPosition: "both",
+    paddingCount: "1",
     useLeetSpeak: false,
-    startString: '',
-    endString: '',
-    maxDuplicates: '2',
+    startString: "",
+    endString: "",
+    maxDuplicates: "2",
     useMaxDuplicates: false,
-    outputFilename: '',
-    splitBy: 'none',
-    splitLines: '1000000',
-    splitSize: '100MB',
-    compression: 'none',
-    maxMemory: '512MB',
+    outputFilename: "",
+    splitBy: "none",
+    splitLines: "1000000",
+    splitSize: "100MB",
+    compression: "none",
+    maxMemory: "512MB",
     useMaxMemory: false,
   });
 
   const updateForm = (field: keyof GeneratorForm, value: string | boolean) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const getCurrentCharset = () => {
-    if (form.charsetType === 'predefined') {
-      return PREDEFINED_CHARSETS[form.charsetName as keyof typeof PREDEFINED_CHARSETS] || '';
+    if (form.charsetType === "predefined") {
+      return (
+        PREDEFINED_CHARSETS[
+          form.charsetName as keyof typeof PREDEFINED_CHARSETS
+        ] || ""
+      );
     }
     return form.customCharset;
   };
 
   const generateLeetVariations = (word: string): string[] => {
     const leetMap = {
-      'a': ['4', '@'],
-      'e': ['3'],
-      'i': ['1', '!'],
-      'o': ['0'],
-      's': ['5', '$'],
-      't': ['7'],
-      'l': ['1'],
-      'g': ['6', '9'],
-      'b': ['8'],
-      'z': ['2'],
-      'c': ['('],
-      'A': ['4', '@'],
-      'E': ['3'],
-      'I': ['1', '!'],
-      'O': ['0'],
-      'S': ['5', '$'],
-      'T': ['7'],
-      'L': ['1'],
-      'G': ['6', '9'],
-      'B': ['8'],
-      'Z': ['2'],
-      'C': ['(']
+      a: ["4", "@"],
+      e: ["3"],
+      i: ["1", "!"],
+      o: ["0"],
+      s: ["5", "$"],
+      t: ["7"],
+      l: ["1"],
+      g: ["6", "9"],
+      b: ["8"],
+      z: ["2"],
+      c: ["("],
+      A: ["4", "@"],
+      E: ["3"],
+      I: ["1", "!"],
+      O: ["0"],
+      S: ["5", "$"],
+      T: ["7"],
+      L: ["1"],
+      G: ["6", "9"],
+      B: ["8"],
+      Z: ["2"],
+      C: ["("],
     };
 
     const variations = new Set<string>();
     variations.add(word);
 
-    const generateCombinations = (remainingChars: string[], currentWord: string, index: number = 0) => {
+    const generateCombinations = (
+      remainingChars: string[],
+      currentWord: string,
+      index: number = 0,
+    ) => {
       if (index >= remainingChars.length) {
         variations.add(currentWord);
         return;
@@ -166,27 +177,31 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
       // Try leet substitutions
       if (leetMap[char as keyof typeof leetMap]) {
         for (const substitution of leetMap[char as keyof typeof leetMap]) {
-          generateCombinations(remainingChars, currentWord + substitution, index + 1);
+          generateCombinations(
+            remainingChars,
+            currentWord + substitution,
+            index + 1,
+          );
         }
       }
     };
 
-    generateCombinations(word.split(''), '');
+    generateCombinations(word.split(""), "");
     return Array.from(variations).sort();
   };
 
   const generateCommand = () => {
-    const parts = ['crunch', form.minLen, form.maxLen];
+    const parts = ["crunch", form.minLen, form.maxLen];
 
     if (form.useWordlist && form.wordlist) {
       // Permutation mode - use wordlist with padding and leet speak
-      const words = form.wordlist.split('\n').filter(word => word.trim());
+      const words = form.wordlist.split("\n").filter((word) => word.trim());
 
       let processedWords: string[] = [];
 
       if (form.useLeetSpeak) {
         // Generate leet variations for each word
-        words.forEach(word => {
+        words.forEach((word) => {
           const variations = generateLeetVariations(word);
           processedWords = processedWords.concat(variations);
         });
@@ -198,22 +213,22 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
 
       if (form.usePadding && form.paddingChars) {
         // Apply padding to each processed word and generate permutations
-        const paddedWords = processedWords.map(word => {
+        const paddedWords = processedWords.map((word) => {
           const count = parseInt(form.paddingCount) || 1;
           const padding = form.paddingChars.slice(0, count);
 
-          if (form.paddingPosition === 'prefix') {
+          if (form.paddingPosition === "prefix") {
             return padding + word;
-          } else if (form.paddingPosition === 'suffix') {
+          } else if (form.paddingPosition === "suffix") {
             return word + padding;
           } else {
             // both
             return padding + word + padding;
           }
         });
-        parts.push('-p', ...paddedWords);
+        parts.push("-p", ...paddedWords);
       } else {
-        parts.push('-p', ...processedWords);
+        parts.push("-p", ...processedWords);
       }
     } else if (form.usePattern && form.pattern) {
       // Pattern generation with padding
@@ -223,17 +238,18 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
         const paddingChars = form.paddingChars.slice(0, count);
 
         let modifiedPattern = form.pattern;
-        if (form.paddingPosition === 'prefix') {
-          modifiedPattern = '^'.repeat(count) + form.pattern;
-        } else if (form.paddingPosition === 'suffix') {
-          modifiedPattern = form.pattern + '^'.repeat(count);
+        if (form.paddingPosition === "prefix") {
+          modifiedPattern = "^".repeat(count) + form.pattern;
+        } else if (form.paddingPosition === "suffix") {
+          modifiedPattern = form.pattern + "^".repeat(count);
         } else {
           // both
-          modifiedPattern = '^'.repeat(count) + form.pattern + '^'.repeat(count);
+          modifiedPattern =
+            "^".repeat(count) + form.pattern + "^".repeat(count);
         }
-        parts.push('-t', modifiedPattern);
+        parts.push("-t", modifiedPattern);
       } else {
-        parts.push('-t', form.pattern);
+        parts.push("-t", form.pattern);
       }
     } else {
       // Character set generation with padding
@@ -244,57 +260,60 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
         charset = form.paddingChars + charset;
       }
 
-      if (charset && form.charsetType === 'custom') {
+      if (charset && form.charsetType === "custom") {
         parts.push(charset);
-      } else if (form.charsetType === 'predefined' && form.charsetName !== 'lowercase') {
+      } else if (
+        form.charsetType === "predefined" &&
+        form.charsetName !== "lowercase"
+      ) {
         parts.push(charset);
       }
     }
 
     if (form.useMaxDuplicates && form.maxDuplicates) {
-      parts.push('-d', form.maxDuplicates + '@');
+      parts.push("-d", form.maxDuplicates + "@");
     }
 
     if (form.startString) {
-      parts.push('-s', form.startString);
+      parts.push("-s", form.startString);
     }
 
     if (form.endString) {
-      parts.push('-e', form.endString);
+      parts.push("-e", form.endString);
     }
 
     if (form.outputFilename) {
-      parts.push('-o', form.outputFilename);
+      parts.push("-o", form.outputFilename);
     }
 
-    if (form.splitBy === 'lines' && form.splitLines) {
-      parts.push('-c', form.splitLines);
-    } else if (form.splitBy === 'size' && form.splitSize) {
-      parts.push('-b', form.splitSize);
+    if (form.splitBy === "lines" && form.splitLines) {
+      parts.push("-c", form.splitLines);
+    } else if (form.splitBy === "size" && form.splitSize) {
+      parts.push("-b", form.splitSize);
     }
 
-    if (form.compression !== 'none') {
-      parts.push('-z', form.compression);
+    if (form.compression !== "none") {
+      parts.push("-z", form.compression);
     }
 
     if (form.useMaxMemory && form.maxMemory) {
-      parts.push('-m', form.maxMemory);
+      parts.push("-m", form.maxMemory);
     }
 
-    return parts.join(' ');
+    return parts.join(" ");
   };
 
   const estimateSize = () => {
     if (form.useWordlist && form.wordlist) {
       // For wordlist permutation mode, estimate based on permutations
-      const words = form.wordlist.split('\n').filter(word => word.trim());
-      if (words.length === 0) return '0 B';
+      const words = form.wordlist.split("\n").filter((word) => word.trim());
+      if (words.length === 0) return "0 B";
 
       let processedWords: string[] = [];
 
       if (form.useLeetSpeak) {
         // Calculate leet variations
-        words.forEach(word => {
+        words.forEach((word) => {
           const variations = generateLeetVariations(word);
           processedWords = processedWords.concat(variations);
         });
@@ -310,12 +329,16 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
         permutations *= i;
       }
 
-      const avgLength = processedWords.reduce((sum, word) => sum + word.length, 0) / processedWords.length;
+      const avgLength =
+        processedWords.reduce((sum, word) => sum + word.length, 0) /
+        processedWords.length;
       const estimatedBytes = permutations * avgLength;
 
       if (estimatedBytes < 1024) return `${estimatedBytes.toFixed(0)} B`;
-      if (estimatedBytes < 1024 * 1024) return `${(estimatedBytes / 1024).toFixed(1)} KB`;
-      if (estimatedBytes < 1024 * 1024 * 1024) return `${(estimatedBytes / (1024 * 1024)).toFixed(1)} MB`;
+      if (estimatedBytes < 1024 * 1024)
+        return `${(estimatedBytes / 1024).toFixed(1)} KB`;
+      if (estimatedBytes < 1024 * 1024 * 1024)
+        return `${(estimatedBytes / (1024 * 1024)).toFixed(1)} MB`;
       return `${(estimatedBytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
     } else {
       // Original calculation for character-based generation
@@ -333,8 +356,10 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
       const estimatedBytes = totalCombinations * avgLength;
 
       if (estimatedBytes < 1024) return `${estimatedBytes.toFixed(0)} B`;
-      if (estimatedBytes < 1024 * 1024) return `${(estimatedBytes / 1024).toFixed(1)} KB`;
-      if (estimatedBytes < 1024 * 1024 * 1024) return `${(estimatedBytes / (1024 * 1024)).toFixed(1)} MB`;
+      if (estimatedBytes < 1024 * 1024)
+        return `${(estimatedBytes / 1024).toFixed(1)} KB`;
+      if (estimatedBytes < 1024 * 1024 * 1024)
+        return `${(estimatedBytes / (1024 * 1024)).toFixed(1)} MB`;
       return `${(estimatedBytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
     }
   };
@@ -345,35 +370,35 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
 
     try {
       // Simulate generation process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Close modal and reset form
       setOpen(false);
       setForm({
-        minLen: '8',
-        maxLen: '63',
-        charsetType: 'predefined',
-        charsetName: 'lowercase',
-        customCharset: '',
-        pattern: '',
+        minLen: "8",
+        maxLen: "63",
+        charsetType: "predefined",
+        charsetName: "lowercase",
+        customCharset: "",
+        pattern: "",
         usePattern: false,
         useWordlist: false,
-        wordlist: '',
+        wordlist: "",
         usePadding: false,
-        paddingChars: '!@#$%^&*',
-        paddingPosition: 'both',
-        paddingCount: '1',
+        paddingChars: "!@#$%^&*",
+        paddingPosition: "both",
+        paddingCount: "1",
         useLeetSpeak: false,
-        startString: '',
-        endString: '',
-        maxDuplicates: '2',
+        startString: "",
+        endString: "",
+        maxDuplicates: "2",
         useMaxDuplicates: false,
-        outputFilename: '',
-        splitBy: 'none',
-        splitLines: '1000000',
-        splitSize: '100MB',
-        compression: 'none',
-        maxMemory: '512MB',
+        outputFilename: "",
+        splitBy: "none",
+        splitLines: "1000000",
+        splitSize: "100MB",
+        compression: "none",
+        maxMemory: "512MB",
         useMaxMemory: false,
       });
     } catch (error) {
@@ -384,10 +409,11 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col" data-testid="dictionary-generator-modal">
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent
+        className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col"
+        data-testid="dictionary-generator-modal"
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-mono uppercase">
             <Zap className="h-5 w-5" />
@@ -398,7 +424,10 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto space-y-6"
+        >
           {/* Basic Settings */}
           <div className="space-y-4">
             <div className="space-y-2">
@@ -407,7 +436,10 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
               </Label>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="minLen" className="font-mono text-xs uppercase">
+                  <Label
+                    htmlFor="minLen"
+                    className="font-mono text-xs uppercase"
+                  >
                     Minimum Length
                   </Label>
                   <Input
@@ -416,13 +448,16 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                     min="8"
                     max="63"
                     value={form.minLen}
-                    onChange={(e) => updateForm('minLen', e.target.value)}
+                    onChange={(e) => updateForm("minLen", e.target.value)}
                     className="font-mono"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="maxLen" className="font-mono text-xs uppercase">
+                  <Label
+                    htmlFor="maxLen"
+                    className="font-mono text-xs uppercase"
+                  >
                     Maximum Length
                   </Label>
                   <Input
@@ -431,7 +466,7 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                     min="8"
                     max="63"
                     value={form.maxLen}
-                    onChange={(e) => updateForm('maxLen', e.target.value)}
+                    onChange={(e) => updateForm("maxLen", e.target.value)}
                     className="font-mono"
                     required
                   />
@@ -444,7 +479,9 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
 
             {/* Generation Mode Selection */}
             <div className="space-y-4">
-              <Label className="font-mono text-xs uppercase">Generation Mode</Label>
+              <Label className="font-mono text-xs uppercase">
+                Generation Mode
+              </Label>
 
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
@@ -452,9 +489,9 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                     id="useWordlist"
                     checked={form.useWordlist}
                     onCheckedChange={(checked) => {
-                      updateForm('useWordlist', checked);
+                      updateForm("useWordlist", checked);
                       if (checked) {
-                        updateForm('usePattern', false);
+                        updateForm("usePattern", false);
                       }
                     }}
                   />
@@ -465,24 +502,33 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
 
                 {form.useWordlist && (
                   <div className="space-y-2">
-                    <Label htmlFor="wordlist" className="font-mono text-xs uppercase">
+                    <Label
+                      htmlFor="wordlist"
+                      className="font-mono text-xs uppercase"
+                    >
                       Enter Words (one per line)
                     </Label>
                     <Textarea
                       id="wordlist"
                       placeholder="password&#10;admin&#10;123456&#10;wifi&#10;network"
                       value={form.wordlist}
-                      onChange={(e) => updateForm('wordlist', e.target.value)}
+                      onChange={(e) => updateForm("wordlist", e.target.value)}
                       className="font-mono h-32"
                       required
                     />
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-muted-foreground font-mono">
-                        Generate all permutations of the provided words. Perfect for targeted WiFi password cracking.
+                        Generate all permutations of the provided words. Perfect
+                        for targeted WiFi password cracking.
                       </p>
                       {form.wordlist && (
                         <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded">
-                          {form.wordlist.split('\n').filter(word => word.trim()).length} words
+                          {
+                            form.wordlist
+                              .split("\n")
+                              .filter((word) => word.trim()).length
+                          }{" "}
+                          words
                         </span>
                       )}
                     </div>
@@ -496,9 +542,14 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                       <Switch
                         id="useLeetSpeak"
                         checked={form.useLeetSpeak}
-                        onCheckedChange={(checked) => updateForm('useLeetSpeak', checked)}
+                        onCheckedChange={(checked) =>
+                          updateForm("useLeetSpeak", checked)
+                        }
                       />
-                      <Label htmlFor="useLeetSpeak" className="font-mono text-sm">
+                      <Label
+                        htmlFor="useLeetSpeak"
+                        className="font-mono text-sm"
+                      >
                         Generate L33t Speak Variations
                       </Label>
                     </div>
@@ -527,17 +578,26 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                             <strong>Example - "apple":</strong>
                           </p>
                           <p className="text-xs text-muted-foreground font-mono">
-                            apple, 4pple, 4pp1e, 4pp13, app13, 4ppl3, appl3, etc.
+                            apple, 4pple, 4pp1e, 4pp13, app13, 4ppl3, appl3,
+                            etc.
                           </p>
                         </div>
 
                         {form.wordlist && (
                           <div className="p-3 bg-background rounded-md">
                             <p className="text-xs text-muted-foreground font-mono">
-                              <strong>Your words will generate approximately:</strong> {form.wordlist.split('\n').filter(word => word.trim()).reduce((total, word) => {
-                                const variations = generateLeetVariations(word);
-                                return total + variations.length;
-                              }, 0)} variations
+                              <strong>
+                                Your words will generate approximately:
+                              </strong>{" "}
+                              {form.wordlist
+                                .split("\n")
+                                .filter((word) => word.trim())
+                                .reduce((total, word) => {
+                                  const variations =
+                                    generateLeetVariations(word);
+                                  return total + variations.length;
+                                }, 0)}{" "}
+                              variations
                             </p>
                           </div>
                         )}
@@ -551,7 +611,9 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                     <Switch
                       id="usePattern"
                       checked={form.usePattern}
-                      onCheckedChange={(checked) => updateForm('usePattern', checked)}
+                      onCheckedChange={(checked) =>
+                        updateForm("usePattern", checked)
+                      }
                     />
                     <Label htmlFor="usePattern" className="font-mono text-sm">
                       Use Pattern Generation
@@ -561,14 +623,17 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
 
                 {form.usePattern && !form.useWordlist && (
                   <div className="space-y-2">
-                    <Label htmlFor="pattern" className="font-mono text-xs uppercase">
+                    <Label
+                      htmlFor="pattern"
+                      className="font-mono text-xs uppercase"
+                    >
                       Pattern (@=lowercase, ^=uppercase, %=numeric, ^=symbol)
                     </Label>
                     <Input
                       id="pattern"
                       placeholder="@@@12"
                       value={form.pattern}
-                      onChange={(e) => updateForm('pattern', e.target.value)}
+                      onChange={(e) => updateForm("pattern", e.target.value)}
                       className="font-mono"
                     />
                   </div>
@@ -582,7 +647,9 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                 <Switch
                   id="usePadding"
                   checked={form.usePadding}
-                  onCheckedChange={(checked) => updateForm('usePadding', checked)}
+                  onCheckedChange={(checked) =>
+                    updateForm("usePadding", checked)
+                  }
                 />
                 <Label htmlFor="usePadding" className="font-mono text-sm">
                   Add Special Character Padding
@@ -593,19 +660,27 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                 <div className="space-y-4 bg-muted/30 p-4 rounded-md">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="paddingChars" className="font-mono text-xs uppercase">
+                      <Label
+                        htmlFor="paddingChars"
+                        className="font-mono text-xs uppercase"
+                      >
                         Padding Characters
                       </Label>
                       <Input
                         id="paddingChars"
                         value={form.paddingChars}
-                        onChange={(e) => updateForm('paddingChars', e.target.value)}
+                        onChange={(e) =>
+                          updateForm("paddingChars", e.target.value)
+                        }
                         className="font-mono"
                         placeholder="!@#$%^&*"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="paddingCount" className="font-mono text-xs uppercase">
+                      <Label
+                        htmlFor="paddingCount"
+                        className="font-mono text-xs uppercase"
+                      >
                         Number of Characters
                       </Label>
                       <Input
@@ -614,17 +689,23 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                         min="1"
                         max="3"
                         value={form.paddingCount}
-                        onChange={(e) => updateForm('paddingCount', e.target.value)}
+                        onChange={(e) =>
+                          updateForm("paddingCount", e.target.value)
+                        }
                         className="font-mono"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="font-mono text-xs uppercase">Padding Position</Label>
+                    <Label className="font-mono text-xs uppercase">
+                      Padding Position
+                    </Label>
                     <Select
                       value={form.paddingPosition}
-                      onValueChange={(value: 'prefix' | 'suffix' | 'both') => updateForm('paddingPosition', value)}
+                      onValueChange={(value: "prefix" | "suffix" | "both") =>
+                        updateForm("paddingPosition", value)
+                      }
                     >
                       <SelectTrigger className="font-mono">
                         <SelectValue />
@@ -632,14 +713,17 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                       <SelectContent>
                         <SelectItem value="prefix">Prefix (Start)</SelectItem>
                         <SelectItem value="suffix">Suffix (End)</SelectItem>
-                        <SelectItem value="both">Both Prefix & Suffix</SelectItem>
+                        <SelectItem value="both">
+                          Both Prefix & Suffix
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="p-3 bg-background rounded-md">
                     <p className="text-xs text-muted-foreground font-mono">
-                      <strong>Examples:</strong> If your word is "password" and padding is "!":
+                      <strong>Examples:</strong> If your word is "password" and
+                      padding is "!":
                     </p>
                     <ul className="text-xs text-muted-foreground font-mono mt-1 space-y-1">
                       <li>• Prefix: !password</li>
@@ -654,10 +738,14 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
             {/* Character Set */}
             {!form.usePattern && !form.useWordlist && (
               <div className="space-y-2">
-                <Label className="font-mono text-xs uppercase">Character Set</Label>
+                <Label className="font-mono text-xs uppercase">
+                  Character Set
+                </Label>
                 <Select
                   value={form.charsetType}
-                  onValueChange={(value: 'predefined' | 'custom') => updateForm('charsetType', value)}
+                  onValueChange={(value: "predefined" | "custom") =>
+                    updateForm("charsetType", value)
+                  }
                 >
                   <SelectTrigger className="font-mono">
                     <SelectValue />
@@ -668,16 +756,16 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                   </SelectContent>
                 </Select>
 
-                {form.charsetType === 'predefined' ? (
+                {form.charsetType === "predefined" ? (
                   <Select
                     value={form.charsetName}
-                    onValueChange={(value) => updateForm('charsetName', value)}
+                    onValueChange={(value) => updateForm("charsetName", value)}
                   >
                     <SelectTrigger className="font-mono">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.keys(PREDEFINED_CHARSETS).map(name => (
+                      {Object.keys(PREDEFINED_CHARSETS).map((name) => (
                         <SelectItem key={name} value={name}>
                           {name.charAt(0).toUpperCase() + name.slice(1)}
                         </SelectItem>
@@ -686,23 +774,30 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                   </Select>
                 ) : (
                   <div className="space-y-2">
-                    <Label htmlFor="customCharset" className="font-mono text-xs uppercase">
+                    <Label
+                      htmlFor="customCharset"
+                      className="font-mono text-xs uppercase"
+                    >
                       Custom Characters
                     </Label>
                     <Textarea
                       id="customCharset"
                       placeholder="Enter custom characters..."
                       value={form.customCharset}
-                      onChange={(e) => updateForm('customCharset', e.target.value)}
+                      onChange={(e) =>
+                        updateForm("customCharset", e.target.value)
+                      }
                       className="font-mono h-20"
                       required
                     />
                   </div>
                 )}
 
-                {form.charsetType === 'predefined' && (
+                {form.charsetType === "predefined" && (
                   <div className="p-3 bg-muted rounded-md">
-                    <p className="text-xs font-mono text-muted-foreground">Preview:</p>
+                    <p className="text-xs font-mono text-muted-foreground">
+                      Preview:
+                    </p>
                     <p className="font-mono text-sm break-all">
                       {getCurrentCharset()}
                     </p>
@@ -720,7 +815,10 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                 </span>
               </div>
               <p className="text-xs text-muted-foreground font-mono mt-1">
-                Command: <code className="bg-background px-1 rounded">{generateCommand()}</code>
+                Command:{" "}
+                <code className="bg-background px-1 rounded">
+                  {generateCommand()}
+                </code>
               </p>
             </div>
           </div>
@@ -728,12 +826,20 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
           {/* Advanced Settings */}
           <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
             <CollapsibleTrigger asChild>
-              <Button variant="ghost" type="button" className="w-full justify-between font-mono">
+              <Button
+                variant="ghost"
+                type="button"
+                className="w-full justify-between font-mono"
+              >
                 <span className="flex items-center gap-2">
                   <Settings className="h-4 w-4" />
                   Advanced Options
                 </span>
-                {advancedOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {advancedOpen ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4">
@@ -741,26 +847,32 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="startString" className="font-mono text-xs uppercase">
+                  <Label
+                    htmlFor="startString"
+                    className="font-mono text-xs uppercase"
+                  >
                     Start String
                   </Label>
                   <Input
                     id="startString"
                     placeholder="Start from..."
                     value={form.startString}
-                    onChange={(e) => updateForm('startString', e.target.value)}
+                    onChange={(e) => updateForm("startString", e.target.value)}
                     className="font-mono"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="endString" className="font-mono text-xs uppercase">
+                  <Label
+                    htmlFor="endString"
+                    className="font-mono text-xs uppercase"
+                  >
                     End String
                   </Label>
                   <Input
                     id="endString"
                     placeholder="End at..."
                     value={form.endString}
-                    onChange={(e) => updateForm('endString', e.target.value)}
+                    onChange={(e) => updateForm("endString", e.target.value)}
                     className="font-mono"
                   />
                 </div>
@@ -770,7 +882,9 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                 <Switch
                   id="useMaxDuplicates"
                   checked={form.useMaxDuplicates}
-                  onCheckedChange={(checked) => updateForm('useMaxDuplicates', checked)}
+                  onCheckedChange={(checked) =>
+                    updateForm("useMaxDuplicates", checked)
+                  }
                 />
                 <Label htmlFor="useMaxDuplicates" className="font-mono text-sm">
                   Limit Consecutive Duplicates
@@ -780,30 +894,39 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                     type="number"
                     min="1"
                     value={form.maxDuplicates}
-                    onChange={(e) => updateForm('maxDuplicates', e.target.value)}
+                    onChange={(e) =>
+                      updateForm("maxDuplicates", e.target.value)
+                    }
                     className="w-20 font-mono h-8"
                   />
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="outputFilename" className="font-mono text-xs uppercase">
+                <Label
+                  htmlFor="outputFilename"
+                  className="font-mono text-xs uppercase"
+                >
                   Output Filename
                 </Label>
                 <Input
                   id="outputFilename"
                   placeholder="dictionary.txt"
                   value={form.outputFilename}
-                  onChange={(e) => updateForm('outputFilename', e.target.value)}
+                  onChange={(e) => updateForm("outputFilename", e.target.value)}
                   className="font-mono"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="font-mono text-xs uppercase">Split Output</Label>
+                <Label className="font-mono text-xs uppercase">
+                  Split Output
+                </Label>
                 <Select
                   value={form.splitBy}
-                  onValueChange={(value: 'none' | 'lines' | 'size') => updateForm('splitBy', value)}
+                  onValueChange={(value: "none" | "lines" | "size") =>
+                    updateForm("splitBy", value)
+                  }
                 >
                   <SelectTrigger className="font-mono">
                     <SelectValue />
@@ -815,30 +938,36 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                   </SelectContent>
                 </Select>
 
-                {form.splitBy === 'lines' && (
+                {form.splitBy === "lines" && (
                   <div className="space-y-2">
-                    <Label htmlFor="splitLines" className="font-mono text-xs uppercase">
+                    <Label
+                      htmlFor="splitLines"
+                      className="font-mono text-xs uppercase"
+                    >
                       Lines per File
                     </Label>
                     <Input
                       id="splitLines"
                       value={form.splitLines}
-                      onChange={(e) => updateForm('splitLines', e.target.value)}
+                      onChange={(e) => updateForm("splitLines", e.target.value)}
                       className="font-mono"
                     />
                   </div>
                 )}
 
-                {form.splitBy === 'size' && (
+                {form.splitBy === "size" && (
                   <div className="space-y-2">
-                    <Label htmlFor="splitSize" className="font-mono text-xs uppercase">
+                    <Label
+                      htmlFor="splitSize"
+                      className="font-mono text-xs uppercase"
+                    >
                       Max File Size
                     </Label>
                     <Input
                       id="splitSize"
                       placeholder="100MB"
                       value={form.splitSize}
-                      onChange={(e) => updateForm('splitSize', e.target.value)}
+                      onChange={(e) => updateForm("splitSize", e.target.value)}
                       className="font-mono"
                     />
                   </div>
@@ -846,10 +975,14 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
               </div>
 
               <div className="space-y-2">
-                <Label className="font-mono text-xs uppercase">Compression</Label>
+                <Label className="font-mono text-xs uppercase">
+                  Compression
+                </Label>
                 <Select
                   value={form.compression}
-                  onValueChange={(value: 'none' | 'gzip' | 'bzip2' | 'lzma' | '7z') => updateForm('compression', value)}
+                  onValueChange={(
+                    value: "none" | "gzip" | "bzip2" | "lzma" | "7z",
+                  ) => updateForm("compression", value)}
                 >
                   <SelectTrigger className="font-mono">
                     <SelectValue />
@@ -868,7 +1001,9 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                 <Switch
                   id="useMaxMemory"
                   checked={form.useMaxMemory}
-                  onCheckedChange={(checked) => updateForm('useMaxMemory', checked)}
+                  onCheckedChange={(checked) =>
+                    updateForm("useMaxMemory", checked)
+                  }
                 />
                 <Label htmlFor="useMaxMemory" className="font-mono text-sm">
                   Limit Memory Usage
@@ -876,7 +1011,7 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
                 {form.useMaxMemory && (
                   <Input
                     value={form.maxMemory}
-                    onChange={(e) => updateForm('maxMemory', e.target.value)}
+                    onChange={(e) => updateForm("maxMemory", e.target.value)}
                     className="w-24 font-mono h-8"
                   />
                 )}
@@ -889,7 +1024,11 @@ export function DictionaryGeneratorModal({ children }: DictionaryGeneratorModalP
             <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
             <div className="text-xs text-muted-foreground font-mono">
               <p className="font-medium mb-1">Warning:</p>
-              <p>Large dictionary generation can consume significant CPU time and disk space. Ensure you have adequate resources before starting generation.</p>
+              <p>
+                Large dictionary generation can consume significant CPU time and
+                disk space. Ensure you have adequate resources before starting
+                generation.
+              </p>
             </div>
           </div>
         </form>

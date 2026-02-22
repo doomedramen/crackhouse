@@ -1,31 +1,13 @@
 {
   "workspaces": {
     ".": {
-      "entry": [
-        "scripts/**/*.js",
-        "knip.js",
-        "knip.config.js"
-      ],
-      "project": [
-        "scripts/**/*.js",
-        "*.js",
-        "*.ts",
-        "*.json"
-      ]
+      "entry": ["scripts/**/*.js", "knip.js", "knip.config.js"],
+      "project": ["scripts/**/*.js", "*.js", "*.ts", "*.json"]
     },
     "apps/api": {
-      "entry": [
-        "src/index.ts",
-        "src/**/*.ts"
-      ],
-      "project": [
-        "src/**/*.ts",
-        "drizzle.config.ts"
-      ],
-      "ignoreDependencies": [
-        "@types/bcryptjs",
-        "@types/uuid"
-      ]
+      "entry": ["src/index.ts", "src/**/*.ts"],
+      "project": ["src/**/*.ts", "drizzle.config.ts"],
+      "ignoreDependencies": ["@types/bcryptjs", "@types/uuid"]
     },
     "apps/web": {
       "entry": [
@@ -45,37 +27,19 @@
         "pages/**/*.tsx",
         "middleware.ts"
       ],
-      "ignoreDependencies": [
-        "@types/node"
-      ]
+      "ignoreDependencies": ["@types/node"]
     },
     "packages/ui": {
-      "entry": [
-        "src/**/*.ts",
-        "src/**/*.tsx"
-      ],
-      "project": [
-        "src/**/*.ts",
-        "src/**/*.tsx"
-      ]
+      "entry": ["src/**/*.ts", "src/**/*.tsx"],
+      "project": ["src/**/*.ts", "src/**/*.tsx"]
     },
     "packages/eslint-config-custom": {
-      "entry": [
-        "index.js"
-      ],
-      "project": [
-        "*.js"
-      ]
+      "entry": ["index.js"],
+      "project": ["*.js"]
     },
     "packages/tsconfig": {
-      "entry": [
-        "base.json",
-        "nextjs.json",
-        "react-library.json"
-      ],
-      "project": [
-        "*.json"
-      ]
+      "entry": ["base.json", "nextjs.json", "react-library.json"],
+      "project": ["*.json"]
     }
   },
   "ignore": [
@@ -101,12 +65,7 @@
     "**/.DS_Store",
     "**/Thumbs.db"
   ],
-  "ignoreBinaries": [
-    "tsx",
-    "drizzle-kit",
-    "playwright",
-    "vitest"
-  ],
+  "ignoreBinaries": ["tsx", "drizzle-kit", "playwright", "vitest"],
   "ignoreDependencies": [
     "eslint",
     "prettier",

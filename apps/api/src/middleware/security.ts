@@ -1,4 +1,5 @@
 import { Context, Next } from "hono";
+import { env } from "@/config/env";
 
 /**
  * Security middleware configurations
@@ -70,8 +71,8 @@ export const securityHeaders = (config: SecurityConfig = {}) => {
     ...restConfig
   } = config;
 
-  const isProduction = process.env.NODE_ENV === "production";
-  const isDevelopment = process.env.NODE_ENV === "development";
+  const isProduction = env.NODE_ENV === "production";
+  const isDevelopment = env.NODE_ENV === "development";
 
   return async (c: Context, next: Next) => {
     // Basic security headers
@@ -390,19 +391,25 @@ export const inputValidation = () => {
 export const comprehensiveSecurity = (config: SecurityConfig = {}) => {
   return async (c: Context, next: Next) => {
     // First, apply request size limit (should reject early if too large)
-    const sizeLimitResult = await requestSizeLimit(config)(c, () => Promise.resolve(undefined));
+    const sizeLimitResult = await requestSizeLimit(config)(c, () =>
+      Promise.resolve(undefined),
+    );
     if (sizeLimitResult) {
       return sizeLimitResult; // Request too large, stop here
     }
 
     // Apply input validation
-    const validationResult = await inputValidation()(c, () => Promise.resolve(undefined));
+    const validationResult = await inputValidation()(c, () =>
+      Promise.resolve(undefined),
+    );
     if (validationResult) {
       return validationResult; // Invalid input, stop here
     }
 
     // Apply IP access control
-    const ipResult = await ipAccessControl(config)(c, () => Promise.resolve(undefined));
+    const ipResult = await ipAccessControl(config)(c, () =>
+      Promise.resolve(undefined),
+    );
     // Note: ipAccessControl doesn't return early, it just adds headers
 
     // Apply security headers and CORS (these add headers but don't reject)

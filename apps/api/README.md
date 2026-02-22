@@ -34,17 +34,20 @@ A comprehensive backend API for WiFi penetration testing tools, built with Hono,
 ## Quick Start
 
 1. **Install dependencies**:
+
    ```bash
    pnpm install
    ```
 
 2. **Set up environment variables**:
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 3. **Set up database**:
+
    ```bash
    pnpm db:push  # Push schema to database
    # Or run migrations:
@@ -52,6 +55,7 @@ A comprehensive backend API for WiFi penetration testing tools, built with Hono,
    ```
 
 4. **Start Redis server**:
+
    ```bash
    # Using Docker:
    docker run -d -p 6379:6379 redis:alpine
@@ -69,6 +73,7 @@ The API will be available at `http://localhost:3001`
 ## API Endpoints
 
 ### Authentication
+
 - `POST /auth/sign-up` - Create new account
 - `POST /auth/sign-in` - Sign in to existing account
 - `POST /auth/sign-out` - Sign out
@@ -76,6 +81,7 @@ The API will be available at `http://localhost:3001`
 - `GET /auth/sessions` - Get active sessions
 
 ### Networks
+
 - `GET /api/networks` - List all networks
 - `GET /api/networks/:id` - Get specific network
 - `POST /api/networks` - Create new network
@@ -83,11 +89,13 @@ The API will be available at `http://localhost:3001`
 - `DELETE /api/networks/:id` - Delete network
 
 ### Dictionaries
+
 - `GET /api/dictionaries` - List all dictionaries
 - `GET /api/dictionaries/:id` - Get specific dictionary
 - `POST /api/dictionaries` - Create dictionary
 
 ### Jobs & Queue Management
+
 - `GET /api/jobs` - List all jobs
 - `GET /api/jobs/:id` - Get specific job
 - `POST /api/queue/crack` - Start password cracking job
@@ -98,6 +106,7 @@ The API will be available at `http://localhost:3001`
 - `POST /api/queue/cleanup` - Start cleanup job
 
 ### File Uploads (Uppy Compatible)
+
 - `POST /api/upload` - Traditional multipart upload
 - `POST /api/upload/presign` - Get presigned upload URL
 - `PUT /api/upload/presigned/:uploadId` - Direct file upload
@@ -107,17 +116,20 @@ The API will be available at `http://localhost:3001`
 - `GET /api/upload/config` - Get upload configuration
 
 ### System
+
 - `GET /health` - Health check with queue status
 
 ## Environment Variables
 
 ### Required
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `REDIS_URL` - Redis connection string
 - `AUTH_SECRET` - Secret for authentication (32+ chars)
 - `JWT_SECRET` - Secret for JWT tokens (32+ chars)
 
 ### Optional
+
 - `NODE_ENV` - Environment (development/production)
 - `PORT` - Server port (default: 3001)
 - `UPLOAD_DIR` - File upload directory (default: ./uploads)
@@ -130,12 +142,14 @@ The API will be available at `http://localhost:3001`
 The API uses BullMQ for background processing:
 
 ### Queue Types
+
 1. **PCAP Processing** - Extract WiFi networks from PCAP files
 2. **Hashcat Cracking** - Run password cracking attacks
 3. **Dictionary Generation** - Create custom password lists
 4. **File Cleanup** - Clean up temporary and old files
 
 ### Worker Management
+
 ```bash
 # Start workers (in production)
 pnpm worker
@@ -150,6 +164,7 @@ pnpm worker:health
 ## Database Schema
 
 The application uses the following main tables:
+
 - `users` - User accounts and authentication
 - `sessions` - User sessions
 - `accounts` - OAuth accounts
@@ -180,45 +195,48 @@ pnpm db:studio
 The API supports both traditional multipart uploads and Uppy-compatible resumable uploads:
 
 ### Traditional Upload
-```javascript
-const formData = new FormData()
-formData.append('file', file)
-formData.append('type', 'pcap')
 
-fetch('/api/upload?type=pcap', {
-  method: 'POST',
-  body: formData
-})
+```javascript
+const formData = new FormData();
+formData.append("file", file);
+formData.append("type", "pcap");
+
+fetch("/api/upload?type=pcap", {
+  method: "POST",
+  body: formData,
+});
 ```
 
 ### Uppy Integration
+
 ```javascript
 // Get presigned URL
-const response = await fetch('/api/upload/presign', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const response = await fetch("/api/upload/presign", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    filename: 'capture.pcap',
-    type: 'pcap'
-  })
-})
+    filename: "capture.pcap",
+    type: "pcap",
+  }),
+});
 
 // Upload file directly
-const { uploadUrl } = await response.json()
+const { uploadUrl } = await response.json();
 fetch(uploadUrl, {
-  method: 'PUT',
+  method: "PUT",
   body: file,
   headers: {
-    'Content-Type': 'application/octet-stream',
-    'x-upload-filename': 'capture.pcap',
-    'x-upload-type': 'pcap'
-  }
-})
+    "Content-Type": "application/octet-stream",
+    "x-upload-filename": "capture.pcap",
+    "x-upload-type": "pcap",
+  },
+});
 ```
 
 ## Development
 
 ### Scripts
+
 - `pnpm dev` - Start development server with hot reload
 - `pnpm build` - Build for production
 - `pnpm start` - Start production server
@@ -226,6 +244,7 @@ fetch(uploadUrl, {
 - `pnpm db:studio` - Open database management interface
 
 ### Project Structure
+
 ```
 src/
 ├── config/          # Configuration and environment

@@ -4,9 +4,9 @@ import "dotenv-flow/config";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
-import { prettyJSON } from "hono/pretty-json";
-import { cors } from "hono/cors";
 import { environmentAwareCORS, publicApiCORS } from "./middleware/cors";
+import { env } from "./config/env";
+import { logger as appLogger } from "./lib/logger";
 
 // Import routes
 import { authRoutes } from "./routes/auth";
@@ -30,13 +30,10 @@ import emailRoutes from "./routes/email";
 
 // Import middleware
 import { securityMiddleware } from "./middleware/security";
-import { fileSecurityMiddleware } from "./middleware/fileSecurity";
 import {
   dbSecurityMiddleware,
   parameterValidationMiddleware,
 } from "./middleware/db-security";
-// import { securityHeaderValidator } from './middleware/security-header-validator' // Temporarily disabled for testing
-import { errorHandler } from "./lib/error-handler";
 
 import { auth } from "./lib/auth";
 import { getWebSocketServer } from "./lib/websocket";
@@ -130,11 +127,11 @@ app.get("/health", publicApiCORS(), (c) => {
     timestamp: new Date().toISOString(),
     service: "crackhouse-api",
     version: "1.0.0",
-    environment: process.env.NODE_ENV || "development",
+    environment: env.NODE_ENV,
   });
 });
 
-const port = parseInt(process.env.PORT || "3001");
+const port = parseInt(env.PORT);
 
 // Export app for testing (must be before startServer)
 export { app };
@@ -143,68 +140,76 @@ async function startServer() {
   try {
     // Initialize config service
     await configService.loadConfig();
-    console.log("✅ Config service initialized");
+    appLogger.info("Config service initialized", "startup");
 
     // Initialize email service
     const emailEnabled = await configService.getBoolean("email-enabled", false);
     if (emailEnabled) {
       try {
         await emailService.initialize();
-        console.log("✅ Email service initialized");
+        appLogger.info("Email service initialized", "startup");
       } catch (error) {
-        console.error("⚠️  Failed to initialize email service", error);
+        appLogger.error("Failed to initialize email service", "startup", {
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
       }
     } else {
-      console.log("⏭  Email service disabled");
+      appLogger.info("Email service disabled", "startup");
     }
 
     // Initialize email queue
     if (emailEnabled) {
       try {
         await emailQueue.initialize();
-        console.log("✅ Email queue initialized");
+        appLogger.info("Email queue initialized", "startup");
       } catch (error) {
-        console.error("⚠️  Failed to initialize email queue", error);
+        appLogger.error("Failed to initialize email queue", "startup", {
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
       }
     }
 
     // Start WebSocket server first
     const wsServer = getWebSocketServer();
     await wsServer.start();
-    console.log(
-      `🔌 WebSocket server started on port ${process.env.WS_PORT || 3002}`,
-    );
+    appLogger.info("WebSocket server started", "startup", {
+      port: parseInt(env.WS_PORT),
+    });
 
     // Start HTTP server
-    console.log(`🚀 CrackHouse API Server starting on port ${port}`);
-    console.log(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
-    console.log(`🔗 Health check: http://localhost:${port}/health`);
-    console.log(
-      `🔗 WebSocket info: http://localhost:${port}/api/websocket/info`,
-    );
+    appLogger.info("CrackHouse API Server starting", "startup", {
+      port,
+      environment: env.NODE_ENV,
+      healthCheck: `http://localhost:${port}/health`,
+      websocketInfo: `http://localhost:${port}/api/websocket/info`,
+    });
 
     serve({
       fetch: app.fetch,
       port,
     }).on("error", (error) => {
-      console.error("❌ Server encountered an error", error);
+      appLogger.error("Server encountered an error", "server", {
+        error: error instanceof Error ? error : new Error(String(error)),
+      });
       process.exit(1);
     });
 
     // Graceful shutdown
     process.on("SIGINT", async () => {
-      console.log("\n🛑 Shutting down servers...");
+      appLogger.info("Shutting down servers (SIGINT)", "shutdown");
       await wsServer.stop();
       process.exit(0);
     });
 
     process.on("SIGTERM", async () => {
-      console.log("\n🛑 Shutting down servers...");
+      appLogger.info("Shutting down servers (SIGTERM)", "shutdown");
       await wsServer.stop();
       process.exit(0);
     });
   } catch (error) {
-    console.error("❌ Failed to start servers", error);
+    appLogger.error("Failed to start servers", "startup", {
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
     process.exit(1);
   }
 }

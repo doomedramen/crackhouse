@@ -79,9 +79,13 @@ export async function processPCAP({
     const extractionResult = await extractNetworksFromPCAP(filePath);
 
     if (!extractionResult.success) {
-      logger.warn("Network extraction failed, continuing without networks", "pcap-processing", {
-        error: extractionResult.error,
-      });
+      logger.warn(
+        "Network extraction failed, continuing without networks",
+        "pcap-processing",
+        {
+          error: extractionResult.error,
+        },
+      );
     }
 
     const extractedNetworks = extractionResult.networks || [];

@@ -307,7 +307,7 @@ export function useStartCrackingJob() {
 
   return useMutation({
     mutationFn: (data: {
-      networkIds: string[];
+      networkId: string;
       dictionaryIds: string[];
       attackMode?: "pmkid" | "handshake";
     }) => ApiClient.post("/api/queue/crack", data),
@@ -384,8 +384,8 @@ export function useUsers(enabled: boolean = true) {
     queryKey: ["users"],
     queryFn: () => ApiClient.get("/api/users"),
     enabled,
-    staleTime: process.env.NODE_ENV === 'test' ? undefined : 60 * 1000,
-    retry: process.env.NODE_ENV === 'test' ? false : 3,
+    staleTime: process.env.NODE_ENV === "test" ? undefined : 60 * 1000,
+    retry: process.env.NODE_ENV === "test" ? false : 3,
     select: (data: any) => ({
       data: data.data || [],
       count: data.count || 0,

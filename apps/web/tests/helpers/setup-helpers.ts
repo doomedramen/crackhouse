@@ -1,7 +1,8 @@
-import { Page, BrowserContext, APIRequestContext } from '@playwright/test';
-import { loginViaUI, TEST_USER } from './auth';
-import * as fs from 'fs';
-import * as path from 'path';
+import { Page, BrowserContext, APIRequestContext } from "@playwright/test";
+import { loginViaUI, TEST_USER } from "./auth";
+import { waitForDebounce, TEST_TIMEOUTS } from "./wait-helpers";
+import * as fs from "fs";
+import * as path from "path";
 
 /**
  * Setup helpers for self-contained E2E tests
@@ -15,35 +16,38 @@ import * as path from 'path';
 const getRepoRoot = () => {
   const cwd = process.cwd();
   // If running from apps/web, go up 2 levels
-  if (cwd.includes('/apps/web')) {
-    return path.resolve(cwd, '..', '..');
+  if (cwd.includes("/apps/web")) {
+    return path.resolve(cwd, "..", "..");
   }
   // If running from repo root, use current directory
   return cwd;
 };
 
 const ROOT_DIR = getRepoRoot();
-const INTEGRATION_FILES_DIR = path.join(ROOT_DIR, 'tests', 'integration-files');
+const INTEGRATION_FILES_DIR = path.join(ROOT_DIR, "tests", "integration-files");
 
 // Test files with known password "wireshark"
-const TEST_PCAP_FILE = path.join(INTEGRATION_FILES_DIR, 'wpa2-ikeriri-5g.pcap');
-const TEST_DICT_FILE = path.join(INTEGRATION_FILES_DIR, 'test-passwords.txt');
+const TEST_PCAP_FILE = path.join(INTEGRATION_FILES_DIR, "wpa2-ikeriri-5g.pcap");
+const TEST_DICT_FILE = path.join(INTEGRATION_FILES_DIR, "test-passwords.txt");
 
 // API URL for direct API calls
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 /**
  * Get auth cookie header from browser context
  */
 export async function getAuthCookies(context: BrowserContext): Promise<string> {
   const cookies = await context.cookies();
-  return cookies.map(c => `${c.name}=${c.value}`).join('; ');
+  return cookies.map((c) => `${c.name}=${c.value}`).join("; ");
 }
 
 /**
  * Full login helper - logs in and returns auth cookies
  */
-export async function fullLogin(page: Page, context: BrowserContext): Promise<string> {
+export async function fullLogin(
+  page: Page,
+  context: BrowserContext,
+): Promise<string> {
   await loginViaUI(page, TEST_USER.email, TEST_USER.password);
   return getAuthCookies(context);
 }
@@ -54,7 +58,7 @@ export async function fullLogin(page: Page, context: BrowserContext): Promise<st
  */
 export async function uploadDictionary(
   context: BrowserContext,
-  name?: string
+  name?: string,
 ): Promise<{ id: string; name: string }> {
   // Read dictionary file or create one
   let dictContent: Buffer;
@@ -64,7 +68,9 @@ export async function uploadDictionary(
     dictContent = fs.readFileSync(TEST_DICT_FILE);
   } else {
     // Create dictionary with known password "wireshark"
-    dictContent = Buffer.from('password\n123456\nwireshark\nadmin\npassword123\nqwerty\nabc123\nletmein\n');
+    dictContent = Buffer.from(
+      "password\n123456\nwireshark\nadmin\npassword123\nqwerty\nabc123\nletmein\n",
+    );
   }
 
   // Create a request context that shares cookies with the browser context
@@ -72,21 +78,27 @@ export async function uploadDictionary(
 
   // Get cookies explicitly from the browser context
   const cookies = await context.cookies();
-  const cookieHeader = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+  const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
 
   // Create multipart form data manually
-  const boundary = '----FormBoundary' + Date.now();
+  const boundary = "----FormBoundary" + Date.now();
   const parts: Buffer[] = [];
 
   // Add file part
   parts.push(Buffer.from(`--${boundary}\r\n`));
-  parts.push(Buffer.from(`Content-Disposition: form-data; name="file"; filename="${dictName}"\r\n`));
+  parts.push(
+    Buffer.from(
+      `Content-Disposition: form-data; name="file"; filename="${dictName}"\r\n`,
+    ),
+  );
   parts.push(Buffer.from(`Content-Type: text/plain\r\n\r\n`));
   parts.push(dictContent);
   parts.push(Buffer.from(`\r\n--${boundary}\r\n`));
 
   // Add name field
-  parts.push(Buffer.from(`Content-Disposition: form-data; name="name"\r\n\r\n`));
+  parts.push(
+    Buffer.from(`Content-Disposition: form-data; name="name"\r\n\r\n`),
+  );
   parts.push(Buffer.from(`Test Dictionary ${Date.now()}`));
   parts.push(Buffer.from(`\r\n--${boundary}--\r\n`));
 
@@ -94,9 +106,9 @@ export async function uploadDictionary(
 
   const response = await request.post(`${API_URL}/api/dictionaries/upload`, {
     headers: {
-      'Content-Type': `multipart/form-data; boundary=${boundary}`,
-      'Cookie': cookieHeader,
-      'Origin': 'http://localhost:3000',
+      "Content-Type": `multipart/form-data; boundary=${boundary}`,
+      Cookie: cookieHeader,
+      Origin: "http://localhost:3000",
     },
     data: body,
   });
@@ -120,8 +132,11 @@ export async function uploadDictionary(
 export async function uploadPcap(
   context: BrowserContext,
   page: Page,
-  waitForProcessing: boolean = true
-): Promise<{ captureId: string; networks: Array<{ id: string; ssid: string; hasHandshake: boolean }> }> {
+  waitForProcessing: boolean = true,
+): Promise<{
+  captureId: string;
+  networks: Array<{ id: string; ssid: string; hasHandshake: boolean }>;
+}> {
   // Read PCAP file
   if (!fs.existsSync(TEST_PCAP_FILE)) {
     throw new Error(`Test PCAP file not found: ${TEST_PCAP_FILE}`);
@@ -134,14 +149,18 @@ export async function uploadPcap(
 
   // Get cookies explicitly from the browser context
   const cookies = await context.cookies();
-  const cookieHeader = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+  const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
 
   // Create multipart form data manually
-  const boundary = '----FormBoundary' + Date.now();
+  const boundary = "----FormBoundary" + Date.now();
   const parts: Buffer[] = [];
 
   parts.push(Buffer.from(`--${boundary}\r\n`));
-  parts.push(Buffer.from(`Content-Disposition: form-data; name="file"; filename="wpa2-ikeriri-5g.pcap"\r\n`));
+  parts.push(
+    Buffer.from(
+      `Content-Disposition: form-data; name="file"; filename="wpa2-ikeriri-5g.pcap"\r\n`,
+    ),
+  );
   parts.push(Buffer.from(`Content-Type: application/vnd.tcpdump.pcap\r\n\r\n`));
   parts.push(pcapBuffer);
   parts.push(Buffer.from(`\r\n--${boundary}--\r\n`));
@@ -150,9 +169,9 @@ export async function uploadPcap(
 
   const response = await request.post(`${API_URL}/api/upload`, {
     headers: {
-      'Content-Type': `multipart/form-data; boundary=${boundary}`,
-      'Cookie': cookieHeader,
-      'Origin': 'http://localhost:3000',
+      "Content-Type": `multipart/form-data; boundary=${boundary}`,
+      Cookie: cookieHeader,
+      Origin: "http://localhost:3000",
     },
     data: body,
   });
@@ -169,20 +188,26 @@ export async function uploadPcap(
     // Wait for PCAP processing to complete
     let attempts = 0;
     const maxAttempts = 30;
-    let status = 'pending';
+    let status = "pending";
 
-    while ((status === 'pending' || status === 'processing') && attempts < maxAttempts) {
-      await page.waitForTimeout(1000);
+    while (
+      (status === "pending" || status === "processing") &&
+      attempts < maxAttempts
+    ) {
+      await waitForDebounce(page, TEST_TIMEOUTS.default);
 
-      const statusResponse = await request.get(`${API_URL}/api/captures/${captureId}`, {
-        headers: {
-          'Cookie': cookieHeader,
+      const statusResponse = await request.get(
+        `${API_URL}/api/captures/${captureId}`,
+        {
+          headers: {
+            Cookie: cookieHeader,
+          },
         },
-      });
+      );
 
       if (statusResponse.ok()) {
         const statusData = await statusResponse.json();
-        status = statusData.data?.status || 'unknown';
+        status = statusData.data?.status || "unknown";
       }
 
       attempts++;
@@ -192,7 +217,7 @@ export async function uploadPcap(
   // Get networks extracted from the PCAP
   const networksResponse = await request.get(`${API_URL}/api/networks`, {
     headers: {
-      'Cookie': cookieHeader,
+      Cookie: cookieHeader,
     },
   });
 
@@ -215,24 +240,24 @@ export async function uploadPcap(
  */
 export async function createJob(
   context: BrowserContext,
-  networkIds: string[],
+  networkId: string,
   dictionaryIds: string[],
-  attackMode: 'handshake' | 'pmkid' = 'handshake'
+  attackMode: "handshake" | "pmkid" = "handshake",
 ): Promise<string> {
   const request = context.request;
 
   // Get cookies explicitly from the browser context
   const cookies = await context.cookies();
-  const cookieHeader = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+  const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
 
   const response = await request.post(`${API_URL}/api/queue/crack`, {
     headers: {
-      'Content-Type': 'application/json',
-      'Cookie': cookieHeader,
-      'Origin': 'http://localhost:3000',
+      "Content-Type": "application/json",
+      Cookie: cookieHeader,
+      Origin: "http://localhost:3000",
     },
     data: JSON.stringify({
-      networkIds,
+      networkId,
       dictionaryIds,
       attackMode,
     }),
@@ -245,7 +270,9 @@ export async function createJob(
 
   const data = await response.json();
   // Handle various response formats
-  return data.job?.id || data.data?.jobId || data.data?.id || data.jobId || data.id;
+  return (
+    data.job?.id || data.data?.jobId || data.data?.id || data.jobId || data.id
+  );
 }
 
 /**
@@ -254,7 +281,7 @@ export async function createJob(
  */
 export async function setupForJobsTest(
   page: Page,
-  context: BrowserContext
+  context: BrowserContext,
 ): Promise<{
   dictionaryId: string;
   networkId: string;
@@ -270,14 +297,19 @@ export async function setupForJobsTest(
   const { networks } = await uploadPcap(context, page);
 
   if (networks.length === 0) {
-    throw new Error('No networks extracted from PCAP - cannot create job');
+    throw new Error("No networks extracted from PCAP - cannot create job");
   }
 
   // Find a network with handshake
-  const networkWithHandshake = networks.find(n => n.hasHandshake) ?? networks[0]!;
+  const networkWithHandshake =
+    networks.find((n) => n.hasHandshake) ?? networks[0]!;
 
-  // Step 4: Create a job
-  const jobId = await createJob(context, [networkWithHandshake.id], [dictionary.id]);
+  // Step 4: Create a job (single network against multiple dictionaries)
+  const jobId = await createJob(
+    context,
+    networkWithHandshake.id,
+    [dictionary.id],
+  );
 
   return {
     dictionaryId: dictionary.id,
@@ -293,11 +325,11 @@ export async function waitForJobCompletion(
   context: BrowserContext,
   jobId: string,
   page: Page,
-  timeoutMs: number = 60000
+  timeoutMs: number = 60000,
 ): Promise<{ status: string; progress: number }> {
   const request = context.request;
   const startTime = Date.now();
-  let lastStatus = 'pending';
+  let lastStatus = "pending";
   let lastProgress = 0;
 
   while (Date.now() - startTime < timeoutMs) {
@@ -305,15 +337,15 @@ export async function waitForJobCompletion(
 
     if (response.ok()) {
       const data = await response.json();
-      lastStatus = data.data?.status || 'unknown';
+      lastStatus = data.data?.status || "unknown";
       lastProgress = data.data?.progress || 0;
 
-      if (['completed', 'failed', 'cancelled'].includes(lastStatus)) {
+      if (["completed", "failed", "cancelled"].includes(lastStatus)) {
         break;
       }
     }
 
-    await page.waitForTimeout(1000);
+    await waitForDebounce(page, TEST_TIMEOUTS.default);
   }
 
   return { status: lastStatus, progress: lastProgress };
@@ -323,5 +355,5 @@ export async function waitForJobCompletion(
  * Block WebSocket connections for tests that don't need real-time updates
  */
 export async function blockWebSockets(page: Page) {
-  await page.route(/^(ws|wss):/, route => route.abort());
+  await page.route(/^(ws|wss):/, (route) => route.abort());
 }

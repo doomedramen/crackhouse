@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
 
 /**
  * Test timeout constants in milliseconds
@@ -36,21 +36,20 @@ export const TEST_TIMEOUTS = {
  */
 export async function waitForPageReady(
   page: Page,
-  options?: { timeout?: number }
+  options?: { timeout?: number },
 ): Promise<void> {
   const timeout = options?.timeout ?? TEST_TIMEOUTS.pageLoad;
 
   // Wait for the page to be in a ready state
-  await page.waitForLoadState('domcontentloaded', { timeout });
+  await page.waitForLoadState("domcontentloaded", { timeout });
 
   // Wait for any pending network activity to settle
   // But don't wait for networkidle as it can hang with WebSocket connections
-  await page.waitForFunction(
-    () => document.readyState === 'complete',
-    { timeout }
-  ).catch(() => {
-    // Ignore if document is already in a good state
-  });
+  await page
+    .waitForFunction(() => document.readyState === "complete", { timeout })
+    .catch(() => {
+      // Ignore if document is already in a good state
+    });
 }
 
 /**
@@ -59,7 +58,7 @@ export async function waitForPageReady(
  */
 export async function waitForCondition(
   condition: () => Promise<boolean>,
-  options?: { timeout?: number; interval?: number }
+  options?: { timeout?: number; interval?: number },
 ): Promise<void> {
   const timeout = options?.timeout ?? TEST_TIMEOUTS.long;
   const interval = options?.interval ?? 100;
@@ -70,7 +69,7 @@ export async function waitForCondition(
     if (await condition()) {
       return;
     }
-    await new Promise(resolve => setTimeout(resolve, interval));
+    await new Promise((resolve) => setTimeout(resolve, interval));
   }
 
   throw new Error(`Condition not met within ${timeout}ms`);
@@ -82,7 +81,7 @@ export async function waitForCondition(
  */
 export async function waitForElementStable(
   locator: Locator,
-  options?: { timeout?: number }
+  options?: { timeout?: number },
 ): Promise<void> {
   const timeout = options?.timeout ?? TEST_TIMEOUTS.modal;
 
@@ -90,7 +89,7 @@ export async function waitForElementStable(
   await expect(locator).toBeVisible({ timeout });
 
   // Wait for any animations to complete
-  await locator.waitFor({ state: 'visible', timeout });
+  await locator.waitFor({ state: "visible", timeout });
 }
 
 /**
@@ -98,8 +97,8 @@ export async function waitForElementStable(
  */
 export async function waitForElementState(
   locator: Locator,
-  state: 'visible' | 'hidden' | 'attached' | 'detached',
-  options?: { timeout?: number }
+  state: "visible" | "hidden" | "attached" | "detached",
+  options?: { timeout?: number },
 ): Promise<void> {
   const timeout = options?.timeout ?? TEST_TIMEOUTS.default;
   await locator.waitFor({ state, timeout });
@@ -112,8 +111,8 @@ export async function waitForElementState(
 export async function waitForTableData(
   tableLocator: Locator,
   emptyStateLocator: Locator,
-  options?: { timeout?: number }
-): Promise<'hasData' | 'empty'> {
+  options?: { timeout?: number },
+): Promise<"hasData" | "empty"> {
   const timeout = options?.timeout ?? TEST_TIMEOUTS.long;
 
   try {
@@ -122,7 +121,7 @@ export async function waitForTableData(
 
     // Check which one is visible
     const hasTable = await tableLocator.isVisible().catch(() => false);
-    return hasTable ? 'hasData' : 'empty';
+    return hasTable ? "hasData" : "empty";
   } catch {
     throw new Error(`Table data did not load within ${timeout}ms`);
   }
@@ -135,19 +134,19 @@ export async function waitForTableData(
 export async function waitForApiResponse(
   page: Page,
   urlPattern: string | RegExp,
-  options?: { timeout?: number }
+  options?: { timeout?: number },
 ): Promise<void> {
   const timeout = options?.timeout ?? TEST_TIMEOUTS.api;
 
   await page.waitForResponse(
-    response => {
+    (response) => {
       const url = response.url();
-      if (typeof urlPattern === 'string') {
+      if (typeof urlPattern === "string") {
         return url.includes(urlPattern);
       }
       return urlPattern.test(url);
     },
-    { timeout }
+    { timeout },
   );
 }
 
@@ -157,7 +156,10 @@ export async function waitForApiResponse(
  */
 export async function clearBrowserState(
   page: Page,
-  context?: { clearCookies: () => Promise<void>; clearPermissions: () => Promise<void> }
+  context?: {
+    clearCookies: () => Promise<void>;
+    clearPermissions: () => Promise<void>;
+  },
 ): Promise<void> {
   if (context) {
     await context.clearCookies();
@@ -165,12 +167,14 @@ export async function clearBrowserState(
   }
 
   // Clear localStorage and sessionStorage
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-  }).catch(() => {
-    // Ignore if page is not in a valid state
-  });
+  await page
+    .evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    })
+    .catch(() => {
+      // Ignore if page is not in a valid state
+    });
 }
 
 /**
@@ -178,7 +182,7 @@ export async function clearBrowserState(
  */
 export async function waitForModalOpen(
   modalLocator: Locator,
-  options?: { timeout?: number }
+  options?: { timeout?: number },
 ): Promise<void> {
   const timeout = options?.timeout ?? TEST_TIMEOUTS.modal;
 
@@ -194,9 +198,49 @@ export async function waitForModalOpen(
  */
 export async function waitForModalClose(
   modalLocator: Locator,
-  options?: { timeout?: number }
+  options?: { timeout?: number },
 ): Promise<void> {
   const timeout = options?.timeout ?? TEST_TIMEOUTS.modal;
 
   await expect(modalLocator).not.toBeVisible({ timeout });
+}
+
+/**
+ * Wait for UI to settle after an action (e.g., search debounce)
+ * Uses a small fixed delay - this is appropriate for debounce scenarios
+ * where we need to wait for the UI to react
+ */
+export async function waitForDebounce(
+  page: Page,
+  ms: number = 300,
+): Promise<void> {
+  await page.waitForTimeout(ms);
+}
+
+/**
+ * Wait for auth cookies to be set
+ * Replaces waitForTimeout after login
+ */
+export async function waitForAuthCookies(
+  page: Page,
+  options?: { timeout?: number },
+): Promise<void> {
+  const timeout = options?.timeout ?? TEST_TIMEOUTS.default;
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeout) {
+    const cookies = await page.context().cookies();
+    const hasAuthCookie = cookies.some(
+      (c) =>
+        c.name.includes("session") ||
+        c.name.includes("auth") ||
+        c.name.includes("token"),
+    );
+    if (hasAuthCookie) {
+      return;
+    }
+    await page.waitForTimeout(100);
+  }
+
+  // Don't throw - just continue, the test will fail if auth is required
 }

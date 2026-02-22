@@ -1,6 +1,7 @@
 import { Worker } from "bullmq";
 import Redis from "ioredis";
 import { env } from "../config/env";
+import { logger } from "@/lib/logger";
 import {
   QUEUE_NAMES,
   PCAPProcessingJob,
@@ -51,7 +52,10 @@ export const pcapProcessingWorker = new Worker<PCAPProcessingJob>(
 
       return { success: true, message: "PCAP processed successfully", result };
     } catch (error) {
-      console.error("PCAP processing failed:", error);
+      logger.error("PCAP processing failed", "worker:pcap", {
+        error: error instanceof Error ? error : new Error(String(error)),
+        jobId: job.id,
+      });
       throw error;
     }
   },
@@ -77,13 +81,7 @@ export const hashcatCrackingWorker = new Worker<HashcatCrackingJob>(
       dictionaryPath,
       attackMode,
       userId,
-      additionalNetworks,
     } = job.data;
-
-    // Log if additional networks are provided (for future multi-network support)
-    if (additionalNetworks && additionalNetworks.length > 0) {
-      console.log(`Job ${jobId} has ${additionalNetworks.length} additional networks to process`);
-    }
 
     try {
       const result = await runHashcatAttack({
@@ -98,7 +96,10 @@ export const hashcatCrackingWorker = new Worker<HashcatCrackingJob>(
 
       return { success: true, result };
     } catch (error) {
-      console.error("Hashcat attack failed:", error);
+      logger.error("Hashcat attack failed", "worker:hashcat", {
+        error: error instanceof Error ? error : new Error(String(error)),
+        jobId: job.id,
+      });
       throw error;
     }
   },
@@ -129,7 +130,10 @@ export const dictionaryGenerationWorker = new Worker<DictionaryGenerationJob>(
         wordCount: result.wordCount,
       };
     } catch (error) {
-      console.error("Dictionary generation failed:", error);
+      logger.error("Dictionary generation failed", "worker:dictionary", {
+        error: error instanceof Error ? error : new Error(String(error)),
+        jobId: job.id,
+      });
       throw error;
     }
   },
@@ -154,7 +158,10 @@ export const fileCleanupWorker = new Worker<FileCleanupJob>(
 
       return { success: true, cleanedFiles: (result as any).length || 0 };
     } catch (error) {
-      console.error("File cleanup failed:", error);
+      logger.error("File cleanup failed", "worker:file-cleanup", {
+        error: error instanceof Error ? error : new Error(String(error)),
+        jobId: job.id,
+      });
       throw error;
     }
   },
@@ -179,7 +186,10 @@ export const storageCleanupWorker = new Worker<StorageCleanupJob>(
 
       return { success: true, ...result };
     } catch (error) {
-      console.error("Storage cleanup failed:", error);
+      logger.error("Storage cleanup failed", "worker:storage-cleanup", {
+        error: error instanceof Error ? error : new Error(String(error)),
+        jobId: job.id,
+      });
       throw error;
     }
   },
@@ -191,36 +201,44 @@ export const storageCleanupWorker = new Worker<StorageCleanupJob>(
 
 // Error handlers for workers
 pcapProcessingWorker.on("error", (error) => {
-  console.error("PCAP Processing Worker Error:", error);
+  logger.error("PCAP Processing Worker Error", "worker:pcap", {
+    error: error instanceof Error ? error : new Error(String(error)),
+  });
 });
 
 hashcatCrackingWorker.on("error", (error) => {
-  console.error("Hashcat Cracking Worker Error:", error);
+  logger.error("Hashcat Cracking Worker Error", "worker:hashcat", {
+    error: error instanceof Error ? error : new Error(String(error)),
+  });
 });
 
 dictionaryGenerationWorker.on("error", (error) => {
-  console.error("Dictionary Generation Worker Error:", error);
+  logger.error("Dictionary Generation Worker Error", "worker:dictionary", {
+    error: error instanceof Error ? error : new Error(String(error)),
+  });
 });
 
 fileCleanupWorker.on("error", (error) => {
-  console.error("File Cleanup Worker Error:", error);
+  logger.error("File Cleanup Worker Error", "worker:file-cleanup", {
+    error: error instanceof Error ? error : new Error(String(error)),
+  });
 });
 
 // Logging for debugging
 pcapProcessingWorker.on("completed", (job) => {
-  console.log(`PCAP Processing job ${job.id} completed`);
+  logger.info("PCAP Processing job completed", "worker:pcap", { jobId: job.id });
 });
 
 hashcatCrackingWorker.on("completed", (job) => {
-  console.log(`Hashcat Cracking job ${job.id} completed`);
+  logger.info("Hashcat Cracking job completed", "worker:hashcat", { jobId: job.id });
 });
 
 dictionaryGenerationWorker.on("completed", (job) => {
-  console.log(`Dictionary Generation job ${job.id} completed`);
+  logger.info("Dictionary Generation job completed", "worker:dictionary", { jobId: job.id });
 });
 
 fileCleanupWorker.on("completed", (job) => {
-  console.log(`File Cleanup job ${job.id} completed`);
+  logger.info("File Cleanup job completed", "worker:file-cleanup", { jobId: job.id });
 });
 
 // Graceful shutdown for workers

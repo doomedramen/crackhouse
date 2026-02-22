@@ -43,6 +43,7 @@ Tests are located in `apps/web/tests/specs/`.
 ## Shared Package
 
 The `@workspace/testcontainers` package (`packages/testcontainers/`) provides:
+
 - `startTestContainers()` — starts Postgres 16 + Redis 7 in parallel
 - `stopTestContainers()` — stops both containers
 - `setTestEnvVars()` — sets DATABASE_URL, REDIS_URL, REDIS_HOST, REDIS_PORT on process.env

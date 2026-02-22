@@ -437,16 +437,26 @@ export const jobProgressMetadataSchema = z
       .describe("Current cracking speed in passwords per second"),
     dictionaryProgress: z
       .object({
-        current: z.number().int().min(0).describe("Current position in dictionary"),
+        current: z
+          .number()
+          .int()
+          .min(0)
+          .describe("Current position in dictionary"),
         total: z.number().int().min(0).describe("Total dictionary size"),
       })
       .optional()
       .describe("Progress through dictionary"),
     hashcatStatus: z
       .object({
-        recovered: z.string().optional().describe("Recovered hashes (e.g., '0/1')"),
+        recovered: z
+          .string()
+          .optional()
+          .describe("Recovered hashes (e.g., '0/1')"),
         speed: z.string().optional().describe("Speed unit (e.g., 'MH/s')"),
-        progress: z.string().optional().describe("Progress string from hashcat"),
+        progress: z
+          .string()
+          .optional()
+          .describe("Progress string from hashcat"),
       })
       .optional()
       .describe("Raw hashcat status information"),

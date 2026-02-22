@@ -68,7 +68,10 @@ export const ResponseHelpers = {
   /**
    * Create a success response with data
    */
-  success<T>(data: T, meta?: PaginationMeta | CountMeta | Record<string, unknown>): ApiSuccessResponse<T> {
+  success<T>(
+    data: T,
+    meta?: PaginationMeta | CountMeta | Record<string, unknown>,
+  ): ApiSuccessResponse<T> {
     const response: ApiSuccessResponse<T> = {
       success: true,
       data,
@@ -95,7 +98,7 @@ export const ResponseHelpers = {
       page: number;
       limit: number;
       total: number;
-    }
+    },
   ): ApiSuccessResponse<T> {
     const totalPages = Math.ceil(options.total / options.limit);
     return this.success(data, {
@@ -130,13 +133,17 @@ export const ResponseHelpers = {
 /**
  * Type guard to check if a response is a success
  */
-export function isSuccessResponse<T>(response: ApiResponse<T>): response is ApiSuccessResponse<T> {
+export function isSuccessResponse<T>(
+  response: ApiResponse<T>,
+): response is ApiSuccessResponse<T> {
   return response.success === true;
 }
 
 /**
  * Type guard to check if a response is an error
  */
-export function isErrorResponse<T>(response: ApiResponse<T>): response is ApiErrorResponse {
+export function isErrorResponse<T>(
+  response: ApiResponse<T>,
+): response is ApiErrorResponse {
   return response.success === false;
 }

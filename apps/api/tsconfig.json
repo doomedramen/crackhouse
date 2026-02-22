@@ -4,7 +4,7 @@
     "module": "ESNext",
     "lib": ["ES2022"],
     "moduleResolution": "node",
-        "strict": false,
+    "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -35,9 +35,7 @@
       "@/workers/*": ["workers/*"]
     }
   },
-  "include": [
-    "src/**/*.ts"
-  ],
+  "include": ["src/**/*.ts"],
   "exclude": [
     "node_modules",
     "dist",

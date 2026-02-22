@@ -1,7 +1,20 @@
-'use client';
+"use client";
 
-import { useNetworks, useDictionaries, useJobs, useStorageStats, useResultsStats } from '@/lib/api-hooks';
-import { Radar, BookOpen, Package, Users, HardDrive, Shield } from 'lucide-react';
+import {
+  useNetworks,
+  useDictionaries,
+  useJobs,
+  useStorageStats,
+  useResultsStats,
+} from "@/lib/api-hooks";
+import {
+  Radar,
+  BookOpen,
+  Package,
+  Users,
+  HardDrive,
+  Shield,
+} from "lucide-react";
 
 interface StatCardProps {
   title: string;
@@ -28,22 +41,19 @@ function StatCard({ title, value, subtitle, icon, isLoading }: StatCardProps) {
   }
 
   return (
-    <div className="bg-card rounded-lg border p-6 shadow-sm" data-testid={`stat-card-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+    <div
+      className="bg-card rounded-lg border p-6 shadow-sm"
+      data-testid={`stat-card-${title.toLowerCase().replace(/\s+/g, "-")}`}
+    >
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <p className="text-sm font-medium text-muted-foreground font-mono uppercase tracking-wider">
             {title}
           </p>
-          <p className="text-2xl font-bold font-mono">
-            {value}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {subtitle}
-          </p>
+          <p className="text-2xl font-bold font-mono">{value}</p>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>
-        <div className="text-muted-foreground">
-          {icon}
-        </div>
+        <div className="text-muted-foreground">{icon}</div>
       </div>
     </div>
   );
@@ -51,7 +61,8 @@ function StatCard({ title, value, subtitle, icon, isLoading }: StatCardProps) {
 
 export function StatsCards() {
   const { data: networksData, isLoading: networksLoading } = useNetworks();
-  const { data: dictionariesData, isLoading: dictionariesLoading } = useDictionaries();
+  const { data: dictionariesData, isLoading: dictionariesLoading } =
+    useDictionaries();
   const { data: jobsData, isLoading: jobsLoading } = useJobs();
   const { data: storageData, isLoading: storageLoading } = useStorageStats();
   const { data: resultsStats, isLoading: resultsLoading } = useResultsStats();
@@ -60,17 +71,24 @@ export function StatsCards() {
   const networks = networksData?.data || [];
   const networksWithHandshakes = networks.filter((n: any) => n.key).length;
   const dictionaries = dictionariesData?.data || [];
-  const totalWords = dictionaries.reduce((sum: number, dict: any) => sum + (dict.wordCount || 0), 0);
+  const totalWords = dictionaries.reduce(
+    (sum: number, dict: any) => sum + (dict.wordCount || 0),
+    0,
+  );
   const jobs = jobsData?.data || [];
-  const activeJobs = jobs.filter((job: any) => job.status === 'running').length;
-  const completedJobs = jobs.filter((job: any) => job.status === 'completed').length;
+  const activeJobs = jobs.filter((job: any) => job.status === "running").length;
+  const completedJobs = jobs.filter(
+    (job: any) => job.status === "completed",
+  ).length;
   const totalJobs = jobs.length;
-  const successRate = totalJobs > 0 ? Math.round((completedJobs / totalJobs) * 100) : 0;
+  const successRate =
+    totalJobs > 0 ? Math.round((completedJobs / totalJobs) * 100) : 0;
 
   // Storage stats
   const storageUsed = storageData?.totalSize || 0;
   const storageQuota = storageData?.quota || 0;
-  const storagePercentage = storageQuota > 0 ? Math.round((storageUsed / storageQuota) * 100) : 0;
+  const storagePercentage =
+    storageQuota > 0 ? Math.round((storageUsed / storageQuota) * 100) : 0;
 
   // Results stats
   const crackedNetworks = resultsStats?.crackedNetworks || 0;
@@ -97,10 +115,18 @@ export function StatsCards() {
     return `${bytes}B`;
   };
 
-  const isLoading = networksLoading || dictionariesLoading || jobsLoading || storageLoading || resultsLoading;
+  const isLoading =
+    networksLoading ||
+    dictionariesLoading ||
+    jobsLoading ||
+    storageLoading ||
+    resultsLoading;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4" data-testid="stats-cards">
+    <div
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4"
+      data-testid="stats-cards"
+    >
       <StatCard
         title="Networks"
         value={networks.length}

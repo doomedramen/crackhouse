@@ -6,7 +6,6 @@ import { jobs } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { auditService } from "@/services/audit.service";
-import { getUserId } from "@/lib/auth";
 
 const jobUpdateRoutes = new Hono();
 

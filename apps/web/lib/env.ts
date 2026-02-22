@@ -1,5 +1,5 @@
-import { createEnv } from '@t3-oss/env-nextjs'
-import { z } from 'zod'
+import { createEnv } from "@t3-oss/env-nextjs";
+import { z } from "zod";
 
 export const env = createEnv({
   server: {
@@ -20,11 +20,11 @@ export const env = createEnv({
    * Run validation on the client and server
    */
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
-})
+});
 
 // Export typed env vars
 export const {
   NEXT_PUBLIC_API_URL,
   NEXT_PUBLIC_WS_URL,
   NEXT_PUBLIC_FRONTEND_URL,
-} = env
+} = env;

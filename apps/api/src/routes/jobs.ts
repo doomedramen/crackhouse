@@ -80,7 +80,10 @@ jobManagementRoutes.get("/", async (c) => {
     });
   } catch (error) {
     logger.error("get_jobs_error", "jobs", {
-      error: error instanceof Error ? error.message : String(error || "Unknown error"),
+      error:
+        error instanceof Error
+          ? error.message
+          : String(error || "Unknown error"),
       userId: c.get("userId"),
     });
 
@@ -247,7 +250,7 @@ jobManagementRoutes.get("/filter", async (c) => {
       // Check if any of the tags are in the job's tags array
       for (const tag of tagList) {
         whereConditions.push(
-          sql`${jobs.tags} @> ${sql.raw(`'["${tag}"]'::jsonb`)}`
+          sql`${jobs.tags} @> ${sql.raw(`'["${tag}"]'::jsonb`)}`,
         );
       }
     }

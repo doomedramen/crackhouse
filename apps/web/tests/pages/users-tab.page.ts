@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
 
 /**
  * Users Tab Page Object
@@ -32,22 +32,24 @@ export class UsersTabPage {
     this.content = page.locator('[data-testid="users-content"]');
 
     // Action buttons
-    this.createUserButton = this.content.getByRole('button', { name: /create user/i });
+    this.createUserButton = this.content.getByRole("button", {
+      name: /create user/i,
+    });
 
     // Table
-    this.usersTable = this.content.locator('table');
-    this.tableRows = this.content.locator('table tbody tr');
+    this.usersTable = this.content.locator("table");
+    this.tableRows = this.content.locator("table tbody tr");
 
     // Empty state
     this.emptyState = this.content.getByText(/no users found/i);
 
     // Loading
-    this.loadingIndicator = this.content.locator('.animate-spin');
+    this.loadingIndicator = this.content.locator(".animate-spin");
   }
 
   async navigateToTab() {
     await this.tab.click();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
     await expect(this.content).toBeVisible({ timeout: 10000 });
   }
 
@@ -67,6 +69,6 @@ export class UsersTabPage {
   }
 
   async getRoleBadges(): Promise<Locator> {
-    return this.content.locator('.rounded-full');
+    return this.content.locator(".rounded-full");
   }
 }

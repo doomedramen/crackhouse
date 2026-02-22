@@ -1,30 +1,33 @@
-import * as nodemailer from 'nodemailer'
-import { env } from '@/config/env'
-import { logger } from '@/lib/logger'
+import * as nodemailer from "nodemailer";
+import { env } from "@/config/env";
+import { logger } from "@/lib/logger";
 
 interface EmailOptions {
-  to: string
-  subject: string
-  html: string
-  text?: string
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
 }
 
 /**
  * Email service for sending transactional emails
  */
 class EmailService {
-  private transporter: nodemailer.Transporter | null = null
+  private transporter: nodemailer.Transporter | null = null;
 
   /**
    * Initialize SMTP transporter
    */
   private async initialize() {
-    if (this.transporter) return this.transporter
+    if (this.transporter) return this.transporter;
 
     // Check if SMTP is configured
     if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
-      logger.warn('SMTP not configured, emails will be logged to console', 'email')
-      return null
+      logger.warn(
+        "SMTP not configured, emails will be logged to console",
+        "email",
+      );
+      return null;
     }
 
     try {
@@ -36,16 +39,16 @@ class EmailService {
           user: env.SMTP_USER,
           pass: env.SMTP_PASS,
         },
-      })
+      });
 
       // Verify connection configuration
-      await this.transporter.verify()
-      logger.info('SMTP connection verified successfully', 'email')
-      return this.transporter
+      await this.transporter.verify();
+      logger.info("SMTP connection verified successfully", "email");
+      return this.transporter;
     } catch (error) {
-      logger.error('Failed to initialize SMTP transporter', 'email', error)
-      this.transporter = null
-      return null
+      logger.error("Failed to initialize SMTP transporter", "email", error);
+      this.transporter = null;
+      return null;
     }
   }
 
@@ -53,15 +56,15 @@ class EmailService {
    * Send an email
    */
   async sendEmail(options: EmailOptions): Promise<boolean> {
-    const { to, subject, html, text } = options
+    const { to, subject, html, text } = options;
 
     // Development mode: just log the email
-    if (env.NODE_ENV === 'development') {
-      logger.info('Email would be sent (development mode)', 'email', {
+    if (env.NODE_ENV === "development") {
+      logger.info("Email would be sent (development mode)", "email", {
         to,
         subject,
         htmlLength: html.length,
-      })
+      });
       console.log(`
 ╔══════════════════════════════════════════════════════════════╗
 ║                   📧 EMAIL (Development)                     ║
@@ -71,44 +74,50 @@ class EmailService {
 ╠══════════════════════════════════════════════════════════════╣
 ║ ${text || html.substring(0, 100)}
 ╚══════════════════════════════════════════════════════════════╝
-      `)
-      return true
+      `);
+      return true;
     }
 
     try {
-      const transporter = await this.initialize()
+      const transporter = await this.initialize();
 
       if (!transporter) {
-        logger.warn('SMTP not configured, email not sent', 'email', { to, subject })
-        return false
+        logger.warn("SMTP not configured, email not sent", "email", {
+          to,
+          subject,
+        });
+        return false;
       }
 
       const info = await transporter.sendMail({
         from: env.SMTP_FROM || env.SMTP_USER,
         to,
         subject,
-        text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML tags for text version
+        text: text || html.replace(/<[^>]*>/g, ""), // Strip HTML tags for text version
         html,
-      })
+      });
 
-      logger.info('Email sent successfully', 'email', {
+      logger.info("Email sent successfully", "email", {
         to,
         subject,
         messageId: info.messageId,
-      })
+      });
 
-      return true
+      return true;
     } catch (error) {
-      logger.error('Failed to send email', 'email', error, { to, subject })
-      return false
+      logger.error("Failed to send email", "email", error, { to, subject });
+      return false;
     }
   }
 
   /**
    * Send email verification email
    */
-  async sendVerificationEmail(to: string, verificationUrl: string): Promise<boolean> {
-    const subject = 'Verify your email address - AutoPWN'
+  async sendVerificationEmail(
+    to: string,
+    verificationUrl: string,
+  ): Promise<boolean> {
+    const subject = "Verify your email address - AutoPWN";
 
     const html = `
 <!DOCTYPE html>
@@ -152,7 +161,7 @@ class EmailService {
   </div>
 </body>
 </html>
-    `
+    `;
 
     const text = `
 Verify Your Email Address
@@ -169,16 +178,16 @@ This link will expire in 24 hours for security reasons.
 ---
 CrackHouse - where handshakes go to break
 This is an automated message, please do not reply.
-    `
+    `;
 
-    return this.sendEmail({ to, subject, html, text })
+    return this.sendEmail({ to, subject, html, text });
   }
 
   /**
    * Send password reset email
    */
   async sendPasswordResetEmail(to: string, resetUrl: string): Promise<boolean> {
-    const subject = 'Reset your password - AutoPWN'
+    const subject = "Reset your password - AutoPWN";
 
     const html = `
 <!DOCTYPE html>
@@ -222,7 +231,7 @@ This is an automated message, please do not reply.
   </div>
 </body>
 </html>
-    `
+    `;
 
     const text = `
 Reset Your Password
@@ -239,11 +248,11 @@ This link will expire in 1 hour for security reasons.
 ---
 CrackHouse - where handshakes go to break
 This is an automated message, please do not reply.
-    `
+    `;
 
-    return this.sendEmail({ to, subject, html, text })
+    return this.sendEmail({ to, subject, html, text });
   }
 }
 
 // Export singleton instance
-export const emailService = new EmailService()
+export const emailService = new EmailService();

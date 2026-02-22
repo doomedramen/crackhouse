@@ -1,5 +1,5 @@
-import axios, { AxiosError } from 'axios';
-import { config, timeouts } from './config';
+import axios, { AxiosError } from "axios";
+import { config, timeouts } from "./config";
 
 export interface ApiError {
   message: string;
@@ -11,7 +11,7 @@ export const apiClient = axios.create({
   baseURL: config.apiUrl,
   withCredentials: true,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   timeout: timeouts.api,
 });
@@ -22,14 +22,14 @@ apiClient.interceptors.request.use(
     // Add auth token from Better Auth session if available
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Response interceptor for consistent error handling
 apiClient.interceptors.response.use(
   (response) => {
     // Our backend returns { success: boolean, data?: any, error?: string }
-    if (response.data && typeof response.data === 'object') {
+    if (response.data && typeof response.data === "object") {
       if (!response.data.success && response.data.error) {
         throw new Error(response.data.error);
       }
@@ -40,26 +40,32 @@ apiClient.interceptors.response.use(
     // Handle auth errors
     if (error.response?.status === 401) {
       // Redirect to login for auth errors
-      window.location.href = '/login';
+      window.location.href = "/login";
     }
 
     // Handle different types of errors
     if (error.response) {
       // Server responded with error status
-      const message = (error.response.data as any)?.error || error.response.data?.message || error.message;
+      const message =
+        (error.response.data as any)?.error ||
+        error.response.data?.message ||
+        error.message;
       throw new Error(message);
     } else if (error.request) {
       // Request was made but no response received
-      throw new Error('Network error. Please check your connection.');
+      throw new Error("Network error. Please check your connection.");
     } else {
       // Something else happened
       throw new Error(error.message);
     }
-  }
+  },
 );
 
 export class ApiClient {
-  static async get<T>(url: string, params?: Record<string, unknown>): Promise<T> {
+  static async get<T>(
+    url: string,
+    params?: Record<string, unknown>,
+  ): Promise<T> {
     const response = await apiClient.get<T>(url, { params });
     return response.data;
   }
@@ -79,19 +85,28 @@ export class ApiClient {
     return response.data;
   }
 
-  static async delete<T>(url: string, params?: Record<string, unknown>): Promise<T> {
+  static async delete<T>(
+    url: string,
+    params?: Record<string, unknown>,
+  ): Promise<T> {
     const response = await apiClient.delete<T>(url, { params });
     return response.data;
   }
 
-  static async upload<T>(url: string, formData: FormData, onProgress?: (progress: number) => void): Promise<T> {
+  static async upload<T>(
+    url: string,
+    formData: FormData,
+    onProgress?: (progress: number) => void,
+  ): Promise<T> {
     const response = await apiClient.post<T>(url, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
       onUploadProgress: (progressEvent) => {
         if (onProgress && progressEvent.total) {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          const progress = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total,
+          );
           onProgress(progress);
         }
       },
@@ -105,7 +120,7 @@ export class ResultsApi {
   static async getResults(params?: {
     jobId?: string;
     networkId?: string;
-    type?: 'password' | 'handshake' | 'error';
+    type?: "password" | "handshake" | "error";
     limit?: number;
     offset?: number;
   }) {
@@ -119,7 +134,7 @@ export class ResultsApi {
         offset: number;
         hasMore: boolean;
       };
-    }>('/api/results', params);
+    }>("/api/results", params);
   }
 
   static async getResultsByJob(jobId: string) {
@@ -156,7 +171,7 @@ export class ResultsApi {
       success: boolean;
       data: any[];
       count: number;
-    }>('/api/results/passwords/cracked');
+    }>("/api/results/passwords/cracked");
   }
 
   static async getResultsStats() {
@@ -168,7 +183,7 @@ export class ResultsApi {
         totalNetworks: number;
         crackRate: number;
       };
-    }>('/api/results/stats');
+    }>("/api/results/stats");
   }
 }
 

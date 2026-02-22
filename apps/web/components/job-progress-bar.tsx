@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useJobUpdates } from '@/lib/use-websocket';
-import { Progress } from '@workspace/ui/components/progress';
-import { Badge } from '@workspace/ui/components/badge';
+import React from "react";
+import { useJobUpdates } from "@/lib/use-websocket";
+import { Progress } from "@workspace/ui/components/progress";
+import { Badge } from "@workspace/ui/components/badge";
 import {
   Clock,
   CheckCircle,
@@ -13,8 +13,8 @@ import {
   Play,
   Pause,
   Zap,
-  Activity
-} from 'lucide-react';
+  Activity,
+} from "lucide-react";
 
 interface JobProgressBarProps {
   jobId: string;
@@ -26,29 +26,30 @@ interface JobProgressBarProps {
 
 export function JobProgressBar({
   jobId,
-  initialStatus = 'pending',
+  initialStatus = "pending",
   initialProgress = 0,
   showDetails = false,
-  className = ''
+  className = "",
 }: JobProgressBarProps) {
   const jobUpdate = useJobUpdates(jobId);
 
   // Use real-time updates if available, otherwise fall back to initial values
   const status = jobUpdate?.status || initialStatus;
-  const progress = jobUpdate?.progress !== undefined ? jobUpdate.progress : initialProgress;
+  const progress =
+    jobUpdate?.progress !== undefined ? jobUpdate.progress : initialProgress;
   const metadata = jobUpdate?.metadata;
 
   const getStatusIcon = () => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return <Clock className="h-4 w-4 text-muted-foreground" />;
-      case 'running':
+      case "running":
         return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
-      case 'completed':
+      case "completed":
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'failed':
+      case "failed":
         return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'cancelled':
+      case "cancelled":
         return <AlertCircle className="h-4 w-4 text-yellow-500" />;
       default:
         return <Clock className="h-4 w-4 text-muted-foreground" />;
@@ -57,29 +58,29 @@ export function JobProgressBar({
 
   const getStatusColor = () => {
     switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'running':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'completed':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'failed':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'cancelled':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "running":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "completed":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "failed":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "cancelled":
+        return "bg-gray-100 text-gray-800 border-gray-200";
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   const getProgressColor = () => {
-    if (status === 'failed' || status === 'cancelled') {
-      return 'bg-destructive';
+    if (status === "failed" || status === "cancelled") {
+      return "bg-destructive";
     }
-    if (status === 'completed') {
-      return 'bg-green-500';
+    if (status === "completed") {
+      return "bg-green-500";
     }
-    return 'bg-primary';
+    return "bg-primary";
   };
 
   const formatDuration = (startTime?: string, endTime?: string) => {
@@ -101,7 +102,7 @@ export function JobProgressBar({
   };
 
   const formatSpeed = (speed: number): string => {
-    if (speed === 0) return '0 H/s';
+    if (speed === 0) return "0 H/s";
     if (speed >= 1000000000) return `${(speed / 1000000000).toFixed(2)} GH/s`;
     if (speed >= 1000000) return `${(speed / 1000000).toFixed(2)} MH/s`;
     if (speed >= 1000) return `${(speed / 1000).toFixed(2)} kH/s`;
@@ -109,7 +110,7 @@ export function JobProgressBar({
   };
 
   const formatETA = (seconds: number): string => {
-    if (!seconds || seconds <= 0) return 'Calculating...';
+    if (!seconds || seconds <= 0) return "Calculating...";
     if (seconds < 60) return `${seconds}s`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
     const hours = Math.floor(seconds / 3600);
@@ -133,7 +134,9 @@ export function JobProgressBar({
           <span className="text-sm font-medium capitalize">{status}</span>
           {showDetails && metadata?.type && (
             <Badge variant="outline" className="text-xs">
-              {metadata.type === 'dictionary_generation' ? 'Dictionary' : 'Cracking'}
+              {metadata.type === "dictionary_generation"
+                ? "Dictionary"
+                : "Cracking"}
             </Badge>
           )}
         </div>
@@ -160,7 +163,7 @@ export function JobProgressBar({
           // Override the progress bar color based on status
           style={
             {
-              '--progress-background': getProgressColor()
+              "--progress-background": getProgressColor(),
             } as React.CSSProperties
           }
         />
@@ -170,7 +173,7 @@ export function JobProgressBar({
       {showDetails && (
         <div className="space-y-2">
           {/* Current Action with Stage */}
-          {status === 'running' && metadata?.currentAction && (
+          {status === "running" && metadata?.currentAction && (
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Zap className="h-3 w-3" />
@@ -186,7 +189,7 @@ export function JobProgressBar({
           )}
 
           {/* Speed and Progress Metrics */}
-          {status === 'running' && metadata?.passwordsPerSecond > 0 && (
+          {status === "running" && metadata?.passwordsPerSecond > 0 && (
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2 text-blue-600">
                 <Activity className="h-3 w-3" />
@@ -194,27 +197,28 @@ export function JobProgressBar({
               </div>
               {metadata?.dictionaryProgress && (
                 <span className="text-muted-foreground">
-                  {formatNumber(metadata.dictionaryProgress.current)} / {formatNumber(metadata.dictionaryProgress.total)}
+                  {formatNumber(metadata.dictionaryProgress.current)} /{" "}
+                  {formatNumber(metadata.dictionaryProgress.total)}
                 </span>
               )}
             </div>
           )}
 
           {/* Error Message */}
-          {jobUpdate?.errorMessage && status === 'failed' && (
+          {jobUpdate?.errorMessage && status === "failed" && (
             <div className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
               <strong>Error:</strong> {jobUpdate.errorMessage}
             </div>
           )}
 
           {/* Success Result */}
-          {jobUpdate?.result && status === 'completed' && (
+          {jobUpdate?.result && status === "completed" && (
             <div className="text-xs text-green-600 bg-green-50 p-2 rounded border border-green-200">
-              <strong>Success:</strong> {
-                typeof jobUpdate.result === 'object' && jobUpdate.result.passwordsFound !== undefined
-                  ? `Found ${jobUpdate.result.passwordsFound} password(s)`
-                  : JSON.stringify(jobUpdate.result)
-              }
+              <strong>Success:</strong>{" "}
+              {typeof jobUpdate.result === "object" &&
+              jobUpdate.result.passwordsFound !== undefined
+                ? `Found ${jobUpdate.result.passwordsFound} password(s)`
+                : JSON.stringify(jobUpdate.result)}
             </div>
           )}
         </div>

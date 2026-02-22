@@ -10,17 +10,36 @@ import {
 } from "@/middleware/auth";
 import { logger } from "@/lib/logger";
 import { CapturesService } from "@/services/captures.service";
+import { env } from "@/config/env";
 
 const capturesRouter = new Hono();
+
+// Use MAX_FILE_SIZE from env, convert to bytes (default 500MB)
+const maxFileSize = () => {
+  const sizeStr = env.MAX_FILE_SIZE || "500MB";
+  const match = sizeStr.match(/^(\d+)(MB|GB|KB)?$/i);
+  if (!match) return 524288000; // 500MB default
+  const num = parseInt(match[1]);
+  const unit = (match[2] || "B").toUpperCase();
+  switch (unit) {
+    case "KB":
+      return num * 1024;
+    case "MB":
+      return num * 1024 * 1024;
+    case "GB":
+      return num * 1024 * 1024 * 1024;
+    default:
+      return num;
+  }
+};
 
 const uploadSchema = z.object({
   file: z.instanceof(File).refine(
     (file) => {
-      const maxSize = Number(process.env.MAX_PCAP_SIZE) || 524288000;
-      return file.size <= maxSize;
+      return file.size <= maxFileSize();
     },
     {
-      message: "File size must be less than 500MB",
+      message: "File size must be less than configured maximum",
     },
   ),
   metadata: z.record(z.string()).optional(),

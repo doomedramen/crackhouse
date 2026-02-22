@@ -128,7 +128,11 @@ export const BACKOFF = {
    * @param base - Base delay in ms (default: 100ms)
    * @param max - Maximum delay in ms (default: 30 seconds)
    */
-  exponential(attempt: number, base: number = TIMEOUTS.retryDelayBase, max: number = TIMEOUTS.retryDelayMax): number {
+  exponential(
+    attempt: number,
+    base: number = TIMEOUTS.retryDelayBase,
+    max: number = TIMEOUTS.retryDelayMax,
+  ): number {
     return Math.min(base * Math.pow(2, attempt - 1), max);
   },
 } as const;

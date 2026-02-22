@@ -2,7 +2,7 @@
 export interface User {
   id: string;
   email: string;
-  role: 'admin' | 'user';
+  role: "admin" | "user";
   createdAt: string;
   updatedAt: string;
 }
@@ -10,7 +10,7 @@ export interface User {
 export interface CreateUserRequest {
   email: string;
   password: string;
-  role?: 'admin' | 'user';
+  role?: "admin" | "user";
 }
 
 export interface LoginRequest {
@@ -29,8 +29,8 @@ export interface Network {
   ssid: string;
   bssid: string;
   captureDate: string;
-  status: 'processing' | 'ready' | 'failed';
-  encryption: 'WPA' | 'WPA2' | 'WPA3' | 'OPEN' | 'WEP';
+  status: "processing" | "ready" | "failed";
+  encryption: "WPA" | "WPA2" | "WPA3" | "OPEN" | "WEP";
   channel?: number;
   signalStrength?: number;
   key?: string;
@@ -42,8 +42,8 @@ export interface NetworkFilters {
   bssid?: string;
   encryption?: string;
   status?: string;
-  sortBy?: 'ssid' | 'captureDate' | 'status';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "ssid" | "captureDate" | "status";
+  sortOrder?: "asc" | "desc";
 }
 
 // Dictionary types
@@ -52,8 +52,8 @@ export interface Dictionary {
   name: string;
   filename: string;
   size: number;
-  type: 'uploaded' | 'generated';
-  status: 'uploading' | 'processing' | 'ready' | 'failed';
+  type: "uploaded" | "generated";
+  status: "uploading" | "processing" | "ready" | "failed";
   createdAt: string;
   uploadedBy?: string;
   wordCount?: number;
@@ -78,14 +78,20 @@ export interface UploadDictionaryRequest {
 export interface Job {
   id: string;
   name: string;
-  status: 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+  status:
+    | "pending"
+    | "running"
+    | "paused"
+    | "completed"
+    | "failed"
+    | "cancelled";
   progress: number;
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
   networks: Network[];
   dictionaries: Dictionary[];
-  attackMode: 'straight' | 'combination' | 'brute-force' | 'mask' | 'hybrid';
+  attackMode: "straight" | "combination" | "brute-force" | "mask" | "hybrid";
   gpuAcceleration: boolean;
   keySpace?: number;
   results?: JobResult[];
@@ -96,7 +102,7 @@ export interface CreateJobRequest {
   name: string;
   networkIds: string[];
   dictionaryIds: string[];
-  attackMode: Job['attackMode'];
+  attackMode: Job["attackMode"];
   gpuAcceleration?: boolean;
   mask?: string;
   ruleFile?: string;
@@ -106,7 +112,7 @@ export interface CreateJobRequest {
 export interface JobResult {
   id: string;
   jobId: string;
-  type: 'password' | 'handshake' | 'error';
+  type: "password" | "handshake" | "error";
   data: any; // Contains password, handshake data, or error info
   createdAt: string;
   job?: {
