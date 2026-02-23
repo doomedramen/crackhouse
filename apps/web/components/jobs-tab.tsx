@@ -186,8 +186,12 @@ export function JobsTab({ className }: JobsTabProps) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span className="inline-flex items-center gap-1">
-                          <span>{getAttackModeIcon(job.attackMode)}</span>
-                          {job.attackMode}
+                          <span>
+                            {getAttackModeIcon(
+                              job.config?.attackMode || job.attackMode,
+                            )}
+                          </span>
+                          {job.config?.attackMode || job.attackMode}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">

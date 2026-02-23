@@ -24,6 +24,27 @@ import {
  *    Includes end-to-end job creation through the UI
  */
 
+/**
+ * Helper: login and navigate to the jobs tab.
+ * Used by serial test blocks where each test gets a fresh page.
+ */
+async function loginAndNavigateToJobsTab(
+  page: import("@playwright/test").Page,
+  context: import("@playwright/test").BrowserContext,
+): Promise<JobsTabPage> {
+  await clearBrowserState(page, context);
+  await loginViaUI(page, TEST_USER.email, TEST_USER.password);
+  await page.goto("/");
+  await expect(page.locator('[data-testid="dashboard"]')).toBeVisible({
+    timeout: TEST_TIMEOUTS.pageLoad,
+  });
+
+  const jobsTab = new JobsTabPage(page);
+  await jobsTab.navigateToTab();
+  await jobsTab.waitForLoaded();
+  return jobsTab;
+}
+
 test.describe("Jobs Tab", () => {
   // ─── Block 1: Tab Navigation & Empty State ───────────────────────
   // No data setup needed. Each test logs in fresh.
@@ -70,22 +91,15 @@ test.describe("Jobs Tab", () => {
   });
 
   // ─── Block 2: Jobs List & Details ────────────────────────────────
-  // Serial: ONE setup creates dict + PCAP + job, then all tests run
-  // against that shared state without resetting.
+  // Serial: ONE setup creates dict + PCAP + job via API, then each
+  // subsequent test logs in fresh and navigates to the jobs tab.
   test.describe("Jobs List & Details", () => {
     test.describe.configure({ mode: "serial" });
 
-    let jobsTab: JobsTabPage;
-
-    test("setup: login, upload dict, PCAP, create job", async ({
-      page,
-      context,
-    }) => {
+    test("setup: upload dict, PCAP, create job", async ({ page, context }) => {
       test.setTimeout(180000);
 
       await clearBrowserState(page, context);
-      // Don't block WebSockets - jobs need real-time updates and blocking causes connection timeouts
-      // await blockWebSockets(page);
 
       // Login
       await loginViaUI(page, TEST_USER.email, TEST_USER.password);
@@ -106,28 +120,17 @@ test.describe("Jobs Tab", () => {
       // Create job via API (single network against multiple dictionaries)
       const jobId = await createJob(context, network.id, [dict.id]);
       expect(jobId).toBeTruthy();
-
-      // Wait a moment for the job to be persisted and visible via API
-      await page.waitForTimeout(1000);
-
-      // Reload to pick up new data
-      await page.reload();
-      await expect(page.locator('[data-testid="dashboard"]')).toBeVisible({
-        timeout: TEST_TIMEOUTS.pageLoad,
-      });
-
-      jobsTab = new JobsTabPage(page);
-      await jobsTab.navigateToTab();
-      await jobsTab.waitForLoaded();
-
-      const jobCount = await jobsTab.getJobCount();
-      expect(jobCount).toBeGreaterThan(0);
     });
 
     test("should display jobs table with correct structure", async ({
       page,
+      context,
     }) => {
-      jobsTab = new JobsTabPage(page);
+      const jobsTab = await loginAndNavigateToJobsTab(page, context);
+
+      // Verify we have jobs
+      const jobCount = await jobsTab.getJobCount();
+      expect(jobCount).toBeGreaterThan(0);
 
       // Create job button visible
       await expect(jobsTab.createJobButton).toBeVisible();
@@ -150,8 +153,9 @@ test.describe("Jobs Tab", () => {
 
     test("should display job row with status and attack mode", async ({
       page,
+      context,
     }) => {
-      jobsTab = new JobsTabPage(page);
+      const jobsTab = await loginAndNavigateToJobsTab(page, context);
 
       const firstRow = jobsTab.tableRows.first();
       const rowText = await firstRow.textContent();
@@ -171,8 +175,8 @@ test.describe("Jobs Tab", () => {
       expect(hasAttackMode).toBe(true);
     });
 
-    test("should open job details dialog", async ({ page }) => {
-      jobsTab = new JobsTabPage(page);
+    test("should open job details dialog", async ({ page, context }) => {
+      const jobsTab = await loginAndNavigateToJobsTab(page, context);
 
       const firstJobName = jobsTab.tableRows.first().locator("button").first();
       await firstJobName.click();
@@ -188,14 +192,10 @@ test.describe("Jobs Tab", () => {
   test.describe("Create Job Modal", () => {
     test.describe.configure({ mode: "serial" });
 
-    let jobsTab: JobsTabPage;
-    let createJobModal: CreateJobModalPage;
-
-    test("setup: login, upload dict and PCAP", async ({ page, context }) => {
+    test("setup: upload dict and PCAP", async ({ page, context }) => {
       test.setTimeout(180000);
 
       await clearBrowserState(page, context);
-      await blockWebSockets(page);
 
       // Login
       await loginViaUI(page, TEST_USER.email, TEST_USER.password);
@@ -208,21 +208,14 @@ test.describe("Jobs Tab", () => {
       await uploadDictionary(context);
       const { networks } = await uploadPcap(context, page);
       expect(networks.length).toBeGreaterThan(0);
-
-      // Reload to pick up new data
-      await page.reload();
-      await expect(page.locator('[data-testid="dashboard"]')).toBeVisible({
-        timeout: TEST_TIMEOUTS.pageLoad,
-      });
-
-      jobsTab = new JobsTabPage(page);
-      await jobsTab.navigateToTab();
-      await jobsTab.waitForLoaded();
     });
 
-    test("should open modal with all form elements", async ({ page }) => {
-      jobsTab = new JobsTabPage(page);
-      createJobModal = new CreateJobModalPage(page);
+    test("should open modal with all form elements", async ({
+      page,
+      context,
+    }) => {
+      const jobsTab = await loginAndNavigateToJobsTab(page, context);
+      const createJobModal = new CreateJobModalPage(page);
 
       await jobsTab.openCreateJobModal();
       await createJobModal.waitForOpen();
@@ -252,9 +245,10 @@ test.describe("Jobs Tab", () => {
 
     test("should show available networks and dictionaries", async ({
       page,
+      context,
     }) => {
-      jobsTab = new JobsTabPage(page);
-      createJobModal = new CreateJobModalPage(page);
+      const jobsTab = await loginAndNavigateToJobsTab(page, context);
+      const createJobModal = new CreateJobModalPage(page);
 
       await jobsTab.openCreateJobModal();
       await createJobModal.waitForOpen();
@@ -268,9 +262,12 @@ test.describe("Jobs Tab", () => {
       await createJobModal.close();
     });
 
-    test("should close modal when cancel is clicked", async ({ page }) => {
-      jobsTab = new JobsTabPage(page);
-      createJobModal = new CreateJobModalPage(page);
+    test("should close modal when cancel is clicked", async ({
+      page,
+      context,
+    }) => {
+      const jobsTab = await loginAndNavigateToJobsTab(page, context);
+      const createJobModal = new CreateJobModalPage(page);
 
       await jobsTab.openCreateJobModal();
       await createJobModal.waitForOpen();
@@ -279,11 +276,11 @@ test.describe("Jobs Tab", () => {
       await expect(createJobModal.modal).not.toBeVisible();
     });
 
-    test("should create a job through the modal", async ({ page }) => {
+    test("should create a job through the modal", async ({ page, context }) => {
       test.setTimeout(60000);
 
-      jobsTab = new JobsTabPage(page);
-      createJobModal = new CreateJobModalPage(page);
+      const jobsTab = await loginAndNavigateToJobsTab(page, context);
+      const createJobModal = new CreateJobModalPage(page);
 
       // Record current job count
       const initialJobCount = await jobsTab.getJobCount();
@@ -307,7 +304,6 @@ test.describe("Jobs Tab", () => {
       await createJobModal.waitForClosed();
 
       // Wait for table to update — job count should increase
-      // waitForLoaded already handles waiting for API response and rendering
       await jobsTab.waitForLoaded();
 
       const newJobCount = await jobsTab.getJobCount();
